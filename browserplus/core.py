@@ -14,26 +14,41 @@ class BrowserPlus:
     def __init__(self, mw):
         self.mw = mw
         self.filter_terms = []
+        self.last_search = ''
 
     def _load(self, browser):
         self.browser = browser
         self.table = browser.table
         self.editor = browser.editor
         self.col = browser.col
+        self.browser.form.searchEdit.currentTextChanged.connect(self.onEditTextChanged)
+
 
     def willSearch(self, ctx: SearchContext):
-        terms = get_search_terms(ctx.search)
-        self.filter_terms = extract_searchable_terms(terms)
-        print("BP: Highlighting these terms: ", self.filter_terms)
+        pass
 
     def didSearch(self, ctx: SearchContext):
-        pass
+        terms = get_search_terms(ctx.search)
+        self.filter_terms = extract_searchable_terms(terms)
+        print("BP: didSearch: Highlighting these terms: ", self.filter_terms)
 
     def _column_data(self, item, is_notes_mode, row, active_columns):
         c = self.table._state.get_card(item)
         n = self.table._state.get_note(item)
         for index, key in enumerate(active_columns):
             row.cells[index].text = "test text goes here"
+
+    def onEditTextChanged(self):
+        text = self.browser.current_search()
+        if text != self.last_search:
+            print("Text changed! Do a search!")
+            try:
+                normed = self.col.build_search_string(text)
+                self.last_search = normed
+                self.table.search(normed)
+            except Exception as err:
+                print("Not a valid search. Show indicator somewhere.")
+
 
 
 class FilterHighlightDelegate(QStyledItemDelegate):
