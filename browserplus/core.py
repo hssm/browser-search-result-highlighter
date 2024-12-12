@@ -21,13 +21,17 @@ class BrowserPlus:
         self.table = browser.table
         self.editor = browser.editor
         self.col = browser.col
-        self.browser.form.searchEdit.currentTextChanged.connect(self.onEditTextChanged)
+        # Text box changes
+        self.browser.form.searchEdit.lineEdit().textEdited.connect(self.onTextEdited)
+        # Drop-down selection
+        self.browser.form.searchEdit.currentIndexChanged.connect(self.onCurrentIndexChanged)
 
 
     def willSearch(self, ctx: SearchContext):
         pass
 
     def didSearch(self, ctx: SearchContext):
+        """Search has happened (regardless of source). Do highlighting."""
         terms = get_search_terms(ctx.search)
         self.filter_terms = extract_searchable_terms(terms)
         print("BP: didSearch: Highlighting these terms: ", self.filter_terms)
@@ -36,18 +40,23 @@ class BrowserPlus:
         c = self.table._state.get_card(item)
         n = self.table._state.get_note(item)
         for index, key in enumerate(active_columns):
-            row.cells[index].text = "test text goes here"
+            #row.cells[index].text = "test text goes here"
+            pass
 
-    def onEditTextChanged(self):
+    def onTextEdited(self):
+        """Textbox text has changed. Do a search."""
         text = self.browser.current_search()
         if text != self.last_search:
-            print("Text changed! Do a search!")
             try:
                 normed = self.col.build_search_string(text)
                 self.last_search = normed
                 self.table.search(normed)
             except Exception as err:
                 print("Not a valid search. Show indicator somewhere.")
+    def onCurrentIndexChanged(self, index):
+        """Do a search on drop-down selection. -1 is text edit. Skip those as we handle already"""
+        if index >= 0:
+            self.onTextEdited()
 
 
 
