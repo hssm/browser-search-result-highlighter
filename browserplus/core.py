@@ -27,10 +27,7 @@ class BrowserPlus:
         self.browser.form.searchEdit.currentIndexChanged.connect(self.onCurrentIndexChanged)
 
 
-    def willSearch(self, ctx: SearchContext):
-        pass
-
-    def didSearch(self, ctx: SearchContext):
+    def did_search(self, ctx: SearchContext):
         """Search has happened (regardless of source). Do highlighting."""
         terms = get_search_terms(ctx.search)
         self.filter_terms = extract_searchable_terms(terms)
@@ -212,27 +209,31 @@ def on_webview_will_set_content(web_content: WebContent, context):
         return
     web_content.js.append(f"/_addons/{addon_package}/web/editor.js")
 
-def myLoadNote(editor, focusTo=None) -> None:
+def did_load_note(editor, focusTo=None) -> None:
     if editor.editorMode is EditorMode.BROWSER:
         # TODO: is there a better way to escape everything?
         terms = json.dumps(browser_plus.filter_terms)
         terms = terms.replace("'", r"\'")
         terms = terms.replace("\\\\", r"\\\\")
         terms = terms.replace("|", r"\\\\|")
-        param = f"bpNoteLoad('{terms}');"
-        print(param)
-        editor.web.eval(param)
+        editor.web.eval(f"bp_terms_str = '{terms}'")
+        editor.web.eval(f"bpParseTerms()")
+        editor.web.eval("bpHighlightAll()")
 
 
 mw.addonManager.setWebExports(__name__, r"web/.*")
 browser_plus = BrowserPlus(mw)
 
+
 # Hooks
 gui_hooks.browser_will_show.append(browser_plus._load)
-gui_hooks.browser_will_search.append(browser_plus.willSearch)
-gui_hooks.browser_did_search.append(browser_plus.didSearch)
+gui_hooks.browser_did_search.append(browser_plus.did_search)
 gui_hooks.browser_did_fetch_row.append(browser_plus._column_data)
 gui_hooks.webview_will_set_content.append(on_webview_will_set_content)
-aqt.browser.Table._setup_view = wrap(aqt.browser.Table._setup_view, _setup_view)
-Editor.loadNote = wrap(Editor.loadNote, myLoadNote, "after")
+gui_hooks.editor_did_load_note.append(did_load_note)
 
+aqt.browser.Table._setup_view = wrap(aqt.browser.Table._setup_view, _setup_view)
+
+# Known issues/TODO:
+# Editing field when source code expanded should remove overlay
+# No overlay on unmatched fields
