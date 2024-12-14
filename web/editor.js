@@ -35,13 +35,15 @@ function bpHighlightField(field, container) {
       return;
     }
     let orig = container.querySelector('anki-editable');
-    if (orig == null) {
-      console.log("Orig was null by whyyyyy");
-      return
+
+    // Only do work if we have a match
+    let found = orig.innerHTML.search(bp_re) >=0;
+    if (!found) {
+      return;
     }
+
     let overlay = orig.cloneNode(true);
     orig.style.display = 'none';
-    overlay.style.background = '#f0f !important';
     overlay.innerHTML = overlay.innerHTML.replace(bp_re,
       "<span style='background-color: #fbfb82; color: black;'>$&</span>");
     overlay.setAttribute('clone', true);

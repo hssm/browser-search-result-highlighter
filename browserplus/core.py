@@ -236,4 +236,3 @@ aqt.browser.Table._setup_view = wrap(aqt.browser.Table._setup_view, _setup_view)
 
 # Known issues/TODO:
 # Editing field when source code expanded should remove overlay
-# No overlay on unmatched fields
