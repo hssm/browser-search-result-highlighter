@@ -7,6 +7,7 @@ from aqt import gui_hooks
 from aqt.browser import SearchContext
 from aqt.editor import Editor, EditorMode
 from aqt.webview import WebContent
+from aqt.theme import theme_manager
 
 addon_package = mw.addonManager.addonFromModule(__name__)
 
@@ -22,9 +23,9 @@ class BrowserPlus:
         self.editor = browser.editor
         self.col = browser.col
         # Text box changes
-        self.browser.form.searchEdit.lineEdit().textEdited.connect(self.onTextEdited)
+        self.browser.form.searchEdit.lineEdit().textEdited.connect(self.on_text_edited)
         # Drop-down selection
-        self.browser.form.searchEdit.currentIndexChanged.connect(self.onCurrentIndexChanged)
+        self.browser.form.searchEdit.currentIndexChanged.connect(self.on_current_index_changed)
 
 
     def did_search(self, ctx: SearchContext):
@@ -40,7 +41,7 @@ class BrowserPlus:
             #row.cells[index].text = "test text goes here"
             pass
 
-    def onTextEdited(self):
+    def on_text_edited(self):
         """Textbox text has changed. Do a search."""
         text = self.browser.current_search()
         if text != self.last_search:
@@ -48,12 +49,20 @@ class BrowserPlus:
                 normed = self.col.build_search_string(text)
                 self.last_search = normed
                 self.table.search(normed)
+                self.browser.form.searchEdit.setStyleSheet("")
             except Exception as err:
-                print("Not a valid search. Show indicator somewhere.")
-    def onCurrentIndexChanged(self, index):
+                if theme_manager.night_mode:
+                    self.browser.form.searchEdit.setStyleSheet("QWidget{background: #4a3a36}")
+                else:
+                    self.browser.form.searchEdit.setStyleSheet("QWidget{background: #ffc9b9}")
+                # Fake a search to remove previous highlights as current search is not valid
+                self.filter_terms = []
+                did_load_note(self.editor)
+
+    def on_current_index_changed(self, index):
         """Do a search on drop-down selection. -1 is text edit. Skip those as we handle already"""
         if index >= 0:
-            self.onTextEdited()
+            self.on_text_edited()
 
 
 
@@ -235,4 +244,5 @@ gui_hooks.editor_did_load_note.append(did_load_note)
 aqt.browser.Table._setup_view = wrap(aqt.browser.Table._setup_view, _setup_view)
 
 # Known issues/TODO:
-# Editing field when source code expanded should remove overlay
+# TODO: Editing field when source code expanded should remove overlay
+# TODO: throttle on typing to avoid spamming searches
