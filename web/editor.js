@@ -9,6 +9,7 @@ let bp_re = null;
 
 // Currently focused element. Avoid exit events while still in it.
 let has_focus = null;
+let has_focus_code = null;
 
 // Build a regex from the string given to us by python
 function bpParseTerms() {
@@ -52,10 +53,19 @@ function bpHighlightField(field, container) {
     overlay.addEventListener('mouseover', bpCloneMouseover);
     orig.addEventListener('mouseleave', bpOnMouseleave);
     orig.addEventListener('blur', bpOnBlur);
+
+    let code_mirror = container.host
+                        .closest('.editing-area')
+                        .querySelector('.CodeMirror textarea');
+    if (code_mirror) {
+      code_mirror.addEventListener('focus', bpCodeOnFocus);
+      code_mirror.addEventListener('blur', bpCodeOnBlur);
+    }
 }
 
 // When loading a note, remove overlay from all fields. Fields
-// are reused so we can't rely on them being new and empty
+// are reused so we can't rely on them being new and empty on
+// card change.
 function bpRemoveAllOverlays() {
     let fields = document.querySelectorAll('.field-container .rich-text-editable');
     fields.forEach((f) => {
@@ -120,10 +130,38 @@ function bpOnMouseleave(event) {
     return;
   }
   let container = orig.parentNode;
+  let code_mirror = container.host
+                    .closest('.editing-area')
+                    .querySelector('.CodeMirror textarea');
+  if (has_focus_code == code_mirror) {
+    return;
+  }
   let clone = container.querySelector('anki-editable[clone]');
   if (clone) {
     return;
   }
   bpHighlightField(orig, container);
   has_focus = null;
+}
+
+// -- For the code editor --
+
+function bpCodeOnFocus(event) {
+  let code_mirror = event.currentTarget;
+  let container = code_mirror
+                    .closest('.editing-area')
+                    .querySelector('.rich-text-editable').shadowRoot;
+
+  bpRemoveOverlay(container);
+  has_focus_code = code_mirror;
+}
+
+function bpCodeOnBlur(event) {
+  let code_mirror = event.currentTarget;
+  let container = code_mirror
+                    .closest('.editing-area')
+                    .querySelector('.rich-text-editable').shadowRoot;
+  let orig = container.querySelector('anki-editable');
+  bpHighlightField(orig, container);
+  has_focus_code = null;
 }

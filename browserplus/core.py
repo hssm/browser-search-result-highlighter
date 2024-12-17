@@ -8,7 +8,6 @@ from aqt.browser import SearchContext
 from aqt.editor import Editor, EditorMode
 from aqt.webview import WebContent
 from aqt.theme import theme_manager
-
 addon_package = mw.addonManager.addonFromModule(__name__)
 
 class BrowserPlus:
@@ -242,7 +241,3 @@ gui_hooks.webview_will_set_content.append(on_webview_will_set_content)
 gui_hooks.editor_did_load_note.append(did_load_note)
 
 aqt.browser.Table._setup_view = wrap(aqt.browser.Table._setup_view, _setup_view)
-
-# Known issues/TODO:
-# TODO: Editing field when source code expanded should remove overlay
-# TODO: throttle on typing to avoid spamming searches
