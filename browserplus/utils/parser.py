@@ -2,6 +2,7 @@ def parse_search(search):
     terms = get_search_terms(search)
     return extract_searchable_terms(terms)
 
+
 # Split search string by search terms
 def get_search_terms(search):
     terms = []

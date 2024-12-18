@@ -1,81 +1,81 @@
 // String from python
-let bp_terms_str = null;
+let terms_str = null;
 
 // Parsed in javascript
-let bp_terms = null;
+let terms = null;
 
 // Regex to search/replace
-let bp_re = null;
+let re = null;
 
 // Currently focused element. Avoid exit events while still in it.
 let has_focus = null;
 let has_focus_code = null;
 
 // Build a regex from the string given to us by python
-function bpParseTerms() {
-  bp_terms = JSON.parse(bp_terms_str);
-  bp_re = new RegExp('('+bp_terms.join("|")+')', "gi");
+function parseTerms() {
+  terms = JSON.parse(terms_str);
+  re = new RegExp('('+terms.join("|")+')', "gi");
 }
 
 // On note load, highlight all fields
-function bpHighlightAll() {
-    bpRemoveAllOverlays();
-    if (bp_terms.length == 0) {
+function highlightAll() {
+    removeAllOverlays();
+    if (terms.length == 0) {
       return;
     }
     let fields = document.querySelectorAll('.field-container .rich-text-editable');
     fields.forEach((f) => {
       let container = f.shadowRoot;
-      bpHighlightField(f, container);
+      highlightField(f, container);
     })
 }
 
 // Highlight a single field
-function bpHighlightField(field, container) {
-    if (bp_terms.length == 0) {
+function highlightField(field, container) {
+    if (terms.length == 0) {
       return;
     }
     let orig = container.querySelector('anki-editable');
 
     // Only do work if we have a match
-    let found = orig.innerHTML.search(bp_re) >=0;
+    let found = orig.innerHTML.search(re) >=0;
     if (!found) {
       return;
     }
 
     let overlay = orig.cloneNode(true);
     orig.style.display = 'none';
-    overlay.innerHTML = overlay.innerHTML.replace(bp_re,
+    overlay.innerHTML = overlay.innerHTML.replace(re,
       "<span style='background-color: #fbfb82; color: black;'>$&</span>");
     overlay.setAttribute('clone', true);
     container.append(overlay);
-    overlay.addEventListener('focus', bpOnFocus);
-    overlay.addEventListener('mouseover', bpCloneMouseover);
-    orig.addEventListener('mouseleave', bpOnMouseleave);
-    orig.addEventListener('blur', bpOnBlur);
+    overlay.addEventListener('focus', onFocus);
+    overlay.addEventListener('mouseover', cloneMouseover);
+    orig.addEventListener('mouseleave', onMouseleave);
+    orig.addEventListener('blur', onBlur);
 
     let code_mirror = container.host
                         .closest('.editing-area')
                         .querySelector('.CodeMirror textarea');
     if (code_mirror) {
-      code_mirror.addEventListener('focus', bpCodeOnFocus);
-      code_mirror.addEventListener('blur', bpCodeOnBlur);
+      code_mirror.addEventListener('focus', codeOnFocus);
+      code_mirror.addEventListener('blur', codeOnBlur);
     }
 }
 
 // When loading a note, remove overlay from all fields. Fields
 // are reused so we can't rely on them being new and empty on
 // card change.
-function bpRemoveAllOverlays() {
+function removeAllOverlays() {
     let fields = document.querySelectorAll('.field-container .rich-text-editable');
     fields.forEach((f) => {
         let container = f.shadowRoot;
-        bpRemoveOverlay(container);
+        removeOverlay(container);
     });
 }
 
 // Remove overlay from a single field
-function bpRemoveOverlay(container) {
+function removeOverlay(container) {
     let clone = container.querySelector('anki-editable[clone]');
     if (clone) {
         let orig = clone.previousElementSibling;
@@ -97,34 +97,34 @@ function bpRemoveOverlay(container) {
 // dom is 100% broken and cannot be used for any clever tricks to mask
 // focus switching seamlessly. This is the clever trick.
 
-function bpCloneMouseover(event) {
+function cloneMouseover(event) {
   let clone = event.currentTarget;
   let orig = clone.previousElementSibling;
   let container = orig.parentNode;
-  bpRemoveOverlay(container);
+  removeOverlay(container);
 }
 
-function bpOnFocus(event) {
+function onFocus(event) {
   let clone = event.currentTarget;
   let orig = clone.previousElementSibling;
   let container = orig.parentNode;
-  bpRemoveOverlay(container);
+  removeOverlay(container);
   orig.focus();
   has_focus = orig;
 }
 
-function bpOnBlur(event) {
+function onBlur(event) {
   let orig = event.currentTarget;
   let container = orig.parentNode;
   let clone = container.querySelector('anki-editable[clone]');
   if (clone) {
     return;
   }
-  bpHighlightField(orig, container);
+  highlightField(orig, container);
   has_focus = null;
 }
 
-function bpOnMouseleave(event) {
+function onMouseleave(event) {
   let orig = event.currentTarget;
   if (has_focus == orig) {
     return;
@@ -140,28 +140,28 @@ function bpOnMouseleave(event) {
   if (clone) {
     return;
   }
-  bpHighlightField(orig, container);
+  highlightField(orig, container);
   has_focus = null;
 }
 
 // -- For the code editor --
 
-function bpCodeOnFocus(event) {
+function codeOnFocus(event) {
   let code_mirror = event.currentTarget;
   let container = code_mirror
                     .closest('.editing-area')
                     .querySelector('.rich-text-editable').shadowRoot;
 
-  bpRemoveOverlay(container);
+  removeOverlay(container);
   has_focus_code = code_mirror;
 }
 
-function bpCodeOnBlur(event) {
+function codeOnBlur(event) {
   let code_mirror = event.currentTarget;
   let container = code_mirror
                     .closest('.editing-area')
                     .querySelector('.rich-text-editable').shadowRoot;
   let orig = container.querySelector('anki-editable');
-  bpHighlightField(orig, container);
+  highlightField(orig, container);
   has_focus_code = null;
 }

@@ -77,9 +77,9 @@ class BrowserPlus:
             terms = terms.replace("'", r"\'")
             terms = terms.replace("\\\\", r"\\\\")
             terms = terms.replace("|", r"\\\\|")
-            editor.web.eval(f"bp_terms_str = '{terms}'")
-            editor.web.eval(f"bpParseTerms()")
-            editor.web.eval("bpHighlightAll()")
+            editor.web.eval(f"terms_str = '{terms}'")
+            editor.web.eval(f"parseTerms()")
+            editor.web.eval("highlightAll()")
 
 class FilterHighlightDelegate(QStyledItemDelegate):
     def __init__(self, owner, choices):
