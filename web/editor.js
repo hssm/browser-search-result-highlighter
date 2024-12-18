@@ -11,6 +11,32 @@ let re = null;
 let has_focus = null;
 let has_focus_code = null;
 
+// Observer to detect code button/shortcut
+const watch = (mutations, observer) => {
+    for (let i = 0; i < mutations.length; i++) {
+      let mutation = mutations[i];
+      if (mutation.addedNodes.length > 0) {
+        try {
+          let node = mutation.addedNodes[0];
+          if (node.classList.contains('CodeMirror-line')) {
+            let container = node
+                              .closest('.editing-area')
+                              .querySelector('.rich-text-editable').shadowRoot;
+            let code_mirror = container.host
+                              .closest('.editing-area')
+                              .querySelector('.CodeMirror textarea');
+            removeOverlay(container);
+            has_focus_code = code_mirror;
+            break;
+          }
+        } catch (error) {
+          // A more precise solution is not worth the effort.
+        }
+      }
+    }
+}
+
+
 // Build a regex from the string given to us by python
 function parseTerms() {
   terms = JSON.parse(terms_str);
@@ -28,6 +54,18 @@ function highlightAll() {
       let container = f.shadowRoot;
       highlightField(f, container);
     })
+
+    // Attach observers for the HTML editor mode (detect when it appears).
+    // There's both a button and a keyboard shortcut. The editor is auto-focused
+    // when it appears before we've set up our event listeners so they'll miss it
+    // and our focus detection becomes wrong. This corrects it.
+    let outer_containers = document.querySelectorAll('.field-container');
+    outer_containers.forEach((c) => {
+      let observer = new MutationObserver(watch);
+      observer.observe(c, {childList: true, subtree: true});
+    })
+
+
 }
 
 // Highlight a single field
@@ -49,8 +87,9 @@ function highlightField(field, container) {
       "<span style='background-color: #fbfb82; color: black;'>$&</span>");
     overlay.setAttribute('clone', true);
     container.append(overlay);
-    overlay.addEventListener('focus', onFocus);
+    overlay.addEventListener('focus', cloneOnFocus);
     overlay.addEventListener('mouseover', cloneMouseover);
+    orig.addEventListener('focus', onFocus);
     orig.addEventListener('mouseleave', onMouseleave);
     orig.addEventListener('blur', onBlur);
 
@@ -95,7 +134,8 @@ function removeOverlay(container) {
 //
 // Focus events and positioning in a contenteditable inside a shadow
 // dom is 100% broken and cannot be used for any clever tricks to mask
-// focus switching seamlessly. This is the clever trick.
+// focus switching seamlessly. This is the clever trick. It masks it
+// well enough.
 
 function cloneMouseover(event) {
   let clone = event.currentTarget;
@@ -104,7 +144,8 @@ function cloneMouseover(event) {
   removeOverlay(container);
 }
 
-function onFocus(event) {
+// When tabbing in
+function cloneOnFocus(event) {
   let clone = event.currentTarget;
   let orig = clone.previousElementSibling;
   let container = orig.parentNode;
@@ -133,7 +174,7 @@ function onMouseleave(event) {
   let code_mirror = container.host
                     .closest('.editing-area')
                     .querySelector('.CodeMirror textarea');
-  if (has_focus_code == code_mirror) {
+  if (has_focus_code && has_focus_code == code_mirror) {
     return;
   }
   let clone = container.querySelector('anki-editable[clone]');
@@ -144,6 +185,12 @@ function onMouseleave(event) {
   has_focus = null;
 }
 
+function onFocus(event) {
+  let orig = event.currentTarget;
+  let container = orig.parentNode;
+  has_focus = orig;
+}
+
 // -- For the code editor --
 
 function codeOnFocus(event) {
@@ -151,7 +198,6 @@ function codeOnFocus(event) {
   let container = code_mirror
                     .closest('.editing-area')
                     .querySelector('.rich-text-editable').shadowRoot;
-
   removeOverlay(container);
   has_focus_code = code_mirror;
 }
@@ -165,3 +211,4 @@ function codeOnBlur(event) {
   highlightField(orig, container);
   has_focus_code = null;
 }
+
