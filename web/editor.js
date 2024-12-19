@@ -26,7 +26,12 @@ const watch = (mutations, observer) => {
                               .closest('.editing-area')
                               .querySelector('.CodeMirror textarea');
             removeOverlay(container);
+            has_focus = null;
             has_focus_code = code_mirror;
+            observer.disconnect();
+
+            code_mirror.addEventListener('focus', codeOnFocus);
+            code_mirror.addEventListener('blur', codeOnBlur);
             break;
           }
         } catch (error) {
@@ -35,6 +40,7 @@ const watch = (mutations, observer) => {
       }
     }
 }
+let observers = [];
 
 
 // Build a regex from the string given to us by python
@@ -64,9 +70,15 @@ function beginHighlighter() {
     // There's both a button and a keyboard shortcut. The editor is auto-focused
     // when it appears before we've set up our event listeners so they'll miss
     // it and our focus detection becomes wrong. This corrects it.
+    // Clear out the old ones first.
+    observers.forEach((o) => {
+        o.disconnect();
+    })
+    observers = [];
     let outer_containers = document.querySelectorAll('.field-container');
     outer_containers.forEach((c) => {
       let observer = new MutationObserver(watch);
+      observers.push(observer);
       observer.observe(c, {childList: true, subtree: true});
     })
 }
