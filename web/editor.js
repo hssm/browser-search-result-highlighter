@@ -43,12 +43,17 @@ function parseTerms() {
   re = new RegExp('('+terms.join("|")+')', "gi");
 }
 
-// On note load, highlight all fields
-function highlightAll() {
+// Do initial work after note loads.
+function beginHighlighter() {
+    // Clean slate when switching notes
     removeAllOverlays();
+
+    // No work to do if no search terms
     if (terms.length == 0) {
       return;
     }
+
+    // Highlight all fields
     let fields = document.querySelectorAll('.field-container .rich-text-editable');
     fields.forEach((f) => {
       let container = f.shadowRoot;
@@ -57,15 +62,13 @@ function highlightAll() {
 
     // Attach observers for the HTML editor mode (detect when it appears).
     // There's both a button and a keyboard shortcut. The editor is auto-focused
-    // when it appears before we've set up our event listeners so they'll miss it
-    // and our focus detection becomes wrong. This corrects it.
+    // when it appears before we've set up our event listeners so they'll miss
+    // it and our focus detection becomes wrong. This corrects it.
     let outer_containers = document.querySelectorAll('.field-container');
     outer_containers.forEach((c) => {
       let observer = new MutationObserver(watch);
       observer.observe(c, {childList: true, subtree: true});
     })
-
-
 }
 
 // Highlight a single field
@@ -89,9 +92,9 @@ function highlightField(field, container) {
     container.append(overlay);
     overlay.addEventListener('focus', cloneOnFocus);
     overlay.addEventListener('mouseover', cloneMouseover);
-    orig.addEventListener('focus', onFocus);
-    orig.addEventListener('mouseleave', onMouseleave);
-    orig.addEventListener('blur', onBlur);
+    orig.addEventListener('focus', origOnFocus);
+    orig.addEventListener('mouseleave', origOnMouseleave);
+    orig.addEventListener('blur', origOnBlur);
 
     let code_mirror = container.host
                         .closest('.editing-area')
@@ -102,9 +105,9 @@ function highlightField(field, container) {
     }
 }
 
-// When loading a note, remove overlay from all fields. Fields
-// are reused so we can't rely on them being new and empty on
-// card change.
+// When loading a note, remove overlay from all fields. Field
+// containers are reused so we can't rely on them being new and
+// empty on card change.
 function removeAllOverlays() {
     let fields = document.querySelectorAll('.field-container .rich-text-editable');
     fields.forEach((f) => {
@@ -124,18 +127,18 @@ function removeOverlay(container) {
 }
 
 
-// We still need to let the user click into a field and edit
-// the original (not the overlay). These events let us hide
-// the overlay when the user hovers over or focuses on a field
-// and rebuild the overlay when they leave it.
-//
-// It does change the focus interactions compared to the original
-// but it's a tradeoff that has to be made to gain this feature.
-//
-// Focus events and positioning in a contenteditable inside a shadow
-// dom is 100% broken and cannot be used for any clever tricks to mask
-// focus switching seamlessly. This is the clever trick. It masks it
-// well enough.
+/*
+We still need to let the user click into a field and edit the original (not
+the overlay). These events let us hide the overlay when the user hovers over
+or focuses on a field and rebuild the overlay when they leave it.
+
+It does change the focus interactions compared to the original but it's a
+tradeoff that has to be made to gain this feature.
+
+Focus events and positioning in a contenteditable inside a shadow dom is 100%
+broken and cannot be used for any clever tricks to mask focus switching
+seamlessly. This is the clever trick. It masks it well enough.
+*/
 
 function cloneMouseover(event) {
   let clone = event.currentTarget;
@@ -154,18 +157,13 @@ function cloneOnFocus(event) {
   has_focus = orig;
 }
 
-function onBlur(event) {
+function origOnFocus(event) {
   let orig = event.currentTarget;
   let container = orig.parentNode;
-  let clone = container.querySelector('anki-editable[clone]');
-  if (clone) {
-    return;
-  }
-  highlightField(orig, container);
-  has_focus = null;
+  has_focus = orig;
 }
 
-function onMouseleave(event) {
+function origOnMouseleave(event) {
   let orig = event.currentTarget;
   if (has_focus == orig) {
     return;
@@ -185,13 +183,16 @@ function onMouseleave(event) {
   has_focus = null;
 }
 
-function onFocus(event) {
+function origOnBlur(event) {
   let orig = event.currentTarget;
   let container = orig.parentNode;
-  has_focus = orig;
+  let clone = container.querySelector('anki-editable[clone]');
+  if (clone) {
+    return;
+  }
+  highlightField(orig, container);
+  has_focus = null;
 }
-
-// -- For the code editor --
 
 function codeOnFocus(event) {
   let code_mirror = event.currentTarget;
