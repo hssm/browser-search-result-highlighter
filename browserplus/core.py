@@ -9,7 +9,7 @@ from aqt.editor import Editor, EditorMode
 from aqt.webview import WebContent
 from aqt.theme import theme_manager
 
-from browserplus.utils.parser import parse_search
+from .utils.parser import parse_search
 
 addon_package = mw.addonManager.addonFromModule(__name__)
 
