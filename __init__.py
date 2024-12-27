@@ -51,7 +51,7 @@ class QuickSearchAndHighlight:
                     self.browser.form.searchEdit.setStyleSheet("QWidget{background: #ffc9b9}")
                 # Fake a search to remove previous highlights as current search is not valid
                 self.filter_terms = []
-                self.did_load_note(self.editor)
+                self.editor_did_load_note(self.editor)
 
     def on_current_index_changed(self, index):
         """Do a search on drop-down selection. -1 is text edit. Skip those as we handle already"""
