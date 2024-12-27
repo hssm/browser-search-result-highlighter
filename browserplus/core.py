@@ -11,7 +11,7 @@ from aqt.theme import theme_manager
 
 from .utils.parser import parse_search
 
-addon_package = mw.addonManager.addonFromModule(__name__)
+addon_package = mw.addonManager.addon_from_module(__name__)
 
 class BrowserPlus:
     def __init__(self, mw):
