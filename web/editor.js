@@ -85,6 +85,7 @@ function beginHighlighter() {
 
 // Highlight a single field
 function highlightField(field, container) {
+
     if (terms.length == 0) {
       return;
     }
@@ -133,7 +134,7 @@ function removeOverlay(container) {
     let clone = container.querySelector('anki-editable[clone]');
     if (clone) {
         let orig = clone.previousElementSibling;
-        orig.style=display = 'block';
+        orig.style.display = 'block';
         clone.remove();
     }
 }
