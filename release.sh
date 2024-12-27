@@ -1,1 +1,1 @@
-git archive -o multi_column_note_editor2.zip HEAD
+git archive -o quick_search_and_highlight.zip HEAD
