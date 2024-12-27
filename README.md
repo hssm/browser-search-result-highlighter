@@ -1,4 +1,4 @@
-This Anki add-on changes the browser to search as you type and to highlight your matches in the note editor so you can quickly see what you searched for in your notes.
+This Anki add-on changes the browser to search as you type and to highlight your matches in the note editor so you can quickly find what you searched for in your notes.
 
 The add-on DOES NOT modify your note content in any way. The highlighted field is an overlay on top of the real field, so anomalies in special cases (where HTML is used inside the field) are purely cosmetic.
 
