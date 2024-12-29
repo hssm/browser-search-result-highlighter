@@ -46,9 +46,9 @@ class QuickSearchAndHighlight:
                 self.browser.form.searchEdit.setStyleSheet("")
             except Exception as err:
                 if theme_manager.night_mode:
-                    self.browser.form.searchEdit.setStyleSheet("QWidget{background: #4a3a36}")
+                    self.browser.form.searchEdit.setStyleSheet("QComboBox {background-color: #4a3a36;}")
                 else:
-                    self.browser.form.searchEdit.setStyleSheet("QWidget{background: #ffc9b9}")
+                    self.browser.form.searchEdit.setStyleSheet("QComboBox {background-color: #ffc9b9;}")
                 # Fake a search to remove previous highlights as current search is not valid
                 self.filter_terms = []
                 self.editor_did_load_note(self.editor)
