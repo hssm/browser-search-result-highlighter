@@ -126,6 +126,7 @@ function removeAllOverlays() {
     fields.forEach((f) => {
         let container = f.shadowRoot;
         removeOverlay(container);
+        removeHiddenShadow(container);
     });
 }
 
@@ -158,6 +159,8 @@ function cloneMouseover(event) {
   let orig = clone.previousElementSibling;
   let container = orig.parentNode;
   removeOverlay(container);
+  // Add yellow glow to show it's hidden
+  addHiddenShadow(container);
 }
 
 // When tabbing in
@@ -174,6 +177,8 @@ function origOnFocus(event) {
   let orig = event.currentTarget;
   let container = orig.parentNode;
   has_focus = orig;
+  removeHiddenShadow(container);
+
 }
 
 function origOnMouseleave(event) {
@@ -194,6 +199,7 @@ function origOnMouseleave(event) {
   }
   highlightField(orig, container);
   has_focus = null;
+  removeHiddenShadow(container);
 }
 
 function origOnBlur(event) {
@@ -205,6 +211,7 @@ function origOnBlur(event) {
   }
   highlightField(orig, container);
   has_focus = null;
+  removeHiddenShadow(container);
 }
 
 function codeOnFocus(event) {
@@ -226,3 +233,13 @@ function codeOnBlur(event) {
   has_focus_code = null;
 }
 
+function addHiddenShadow(container) {
+
+  container.host.closest('.editor-field').style.outline = '2px solid #e6e678';
+  if (document.documentElement.getAttribute('data-bs-theme') == 'dark') {
+    container.host.closest('.editor-field').style.outline = '2px solid #6f6b44';
+  }
+}
+function removeHiddenShadow(container) {
+  container.host.closest('.editor-field').style.outline = '';
+}
