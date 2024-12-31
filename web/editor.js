@@ -11,6 +11,9 @@ let re = null;
 let has_focus = null;
 let has_focus_code = null;
 
+// First match found to scroll to
+let scroll_to = null;
+
 // Observer to detect code button/shortcut
 const watch = (mutations, observer) => {
     for (let i = 0; i < mutations.length; i++) {
@@ -53,6 +56,7 @@ function parseTerms() {
 function beginHighlighter() {
     // Clean slate when switching notes
     removeAllOverlays();
+    scroll_to = null;
 
     // No work to do if no search terms
     if (terms.length == 0) {
@@ -81,11 +85,14 @@ function beginHighlighter() {
       observers.push(observer);
       observer.observe(c, {childList: true, subtree: true});
     })
+
+    if (scroll_to) {
+        scroll_to.scrollIntoViewIfNeeded();
+    }
 }
 
 // Highlight a single field
 function highlightField(field, container) {
-
     if (terms.length == 0) {
       return;
     }
@@ -115,6 +122,9 @@ function highlightField(field, container) {
     if (code_mirror) {
       code_mirror.addEventListener('focus', codeOnFocus);
       code_mirror.addEventListener('blur', codeOnBlur);
+    }
+    if (!scroll_to) {
+        scroll_to = container.host.closest('.field-container');
     }
 }
 
