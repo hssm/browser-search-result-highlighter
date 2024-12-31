@@ -1,5 +1,5 @@
 # https://github.com/hssm/quick-search-and-highlight
-# Version 1.2
+# Version 1.3
 
 import json
 
