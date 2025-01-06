@@ -1,0 +1,18 @@
+#qsah-controls {
+  margin-left: auto;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+#qsah-controls > * {
+    margin: 0 4px;
+}
+
+#qsah-separator {
+  color: #949494;
+}
+
+#qsah-matched {
+  width: 3em;
+}

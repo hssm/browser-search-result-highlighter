@@ -14,6 +14,15 @@ let has_focus_code = null;
 // First match found to scroll to
 let scroll_to = null;
 
+// Scroll to first match: user toggleable
+let auto_scroll = false;
+
+// Number of matches total
+let matched_total = 0;
+
+// Number of fields with matches
+let matched_fields = 0;
+
 // Observer to detect code button/shortcut
 const watch = (mutations, observer) => {
     for (let i = 0; i < mutations.length; i++) {
@@ -45,6 +54,42 @@ const watch = (mutations, observer) => {
 }
 let observers = [];
 
+// UI controls
+let controls =
+`
+<span id="qsah-controls">
+    <input type="checkbox" id="qsah-auto" name="qsah-auto"/>
+    <label for="qsah-auto">Auto Scroll</label>
+    <span id="qsah-separator">|</span>
+    <span id="qsah-mtotal">0</span> matches in
+    <span id="qsah-mfields">0</span> fields
+</span>
+`
+
+// Count occurrences in regex
+const matchCount = (str, re) => {
+  return str?.match(re)?.length ?? 0;
+};
+
+
+function addControls(auto) {
+    // First load has a race condition. Keep trying until toolbar appears.
+    let toolbar = document.querySelector('div[role="toolbar"]');
+    if (!toolbar) {
+        setTimeout(() => {addControls(auto)}, 20)
+        return;
+    }
+    toolbar.insertAdjacentHTML("beforeend", controls);
+    let checkbox = toolbar.querySelector('#qsah-auto');
+    checkbox.addEventListener('change', on_auto);
+    auto_scroll = auto;
+    checkbox.checked = auto;
+}
+
+function updateControls() {
+    document.getElementById('qsah-mtotal').innerHTML = matched_total;
+    document.getElementById('qsah-mfields').innerHTML = matched_fields;
+}
 
 // Build a regex from the string given to us by python
 function parseTerms() {
@@ -57,6 +102,8 @@ function beginHighlighter() {
     // Clean slate when switching notes
     removeAllOverlays();
     scroll_to = null;
+    matched_fields = 0;
+    matched_total = 0;
 
     // No work to do if no search terms
     if (terms.length == 0) {
@@ -86,7 +133,9 @@ function beginHighlighter() {
       observer.observe(c, {childList: true, subtree: true});
     })
 
-    if (scroll_to) {
+    updateControls();
+
+    if (auto_scroll && scroll_to) {
         scroll_to.scrollIntoViewIfNeeded();
     }
 }
@@ -99,10 +148,12 @@ function highlightField(field, container) {
     let orig = container.querySelector('anki-editable');
 
     // Only do work if we have a match
-    let found = orig.innerHTML.search(re) >=0;
-    if (!found) {
+    let count = matchCount(orig.innerHTML, re);
+    if (!count) {
       return;
     }
+    matched_total += count;
+    matched_fields++;
 
     let overlay = orig.cloneNode(true);
     orig.style.display = 'none';
@@ -252,4 +303,12 @@ function addHiddenShadow(container) {
 }
 function removeHiddenShadow(container) {
   container.host.closest('.editor-field').style.outline = '';
+}
+
+
+// UI controls
+
+function on_auto(event) {
+  auto_scroll = event.target.checked;
+  pycmd('QSAH:' + JSON.stringify({'auto': auto_scroll}));
 }

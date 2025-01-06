@@ -20,6 +20,11 @@ class QuickSearchAndHighlight:
         self.filter_terms = []
         self.last_search = ''
 
+    def editor_init(self, editor):
+        config = mw.col.get_config('qsah', {'auto': True})
+        auto = json.dumps(config['auto'])
+        editor.web.eval(f"addControls({auto})")
+
     def browser_will_show(self, browser):
         self.browser = browser
         self.table = browser.table
@@ -63,6 +68,7 @@ class QuickSearchAndHighlight:
         if not isinstance(context, Editor):
             return
         web_content.js.append(f"/_addons/{addon_package}/web/editor.js")
+        web_content.css.append(f"/_addons/{addon_package}/web/editor.css")
 
     def editor_did_load_note(self, editor, focusTo=None) -> None:
         if editor.editorMode is EditorMode.BROWSER:
@@ -76,6 +82,16 @@ class QuickSearchAndHighlight:
             editor.web.eval("beginHighlighter()")
 
 
+    def on_js_message(self, handled, message, context):
+        if not message.startswith('QSAH:'):
+            return handled
+
+        vals = json.loads(message[5:])
+        config = mw.col.get_config('qsah', dict())
+        config['auto'] = vals['auto']
+        mw.col.set_config('qsah', config)
+        return True, None
+
 mw.addonManager.setWebExports(__name__, r"web/.*")
 qsah = QuickSearchAndHighlight(mw)
 
@@ -84,4 +100,5 @@ gui_hooks.browser_will_show.append(qsah.browser_will_show)
 gui_hooks.browser_did_search.append(qsah.did_search)
 gui_hooks.webview_will_set_content.append(qsah.on_webview_will_set_content)
 gui_hooks.editor_did_load_note.append(qsah.editor_did_load_note)
-
+gui_hooks.editor_did_init.append(qsah.editor_init)
+gui_hooks.webview_did_receive_js_message.append(qsah.on_js_message)
