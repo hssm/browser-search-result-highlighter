@@ -84,6 +84,9 @@ function addControls(auto) {
     checkbox.addEventListener('change', on_auto);
     auto_scroll = auto;
     checkbox.checked = auto;
+
+    // The highlighter
+    CSS.highlights.set('match', new Highlight());
 }
 
 function updateControls() {
@@ -140,6 +143,11 @@ function beginHighlighter() {
     }
 }
 
+function strip(html){
+   let doc = new DOMParser().parseFromString(html, 'text/html');
+   return doc.body.textContent || "";
+}
+
 // Highlight a single field
 function highlightField(field, container) {
     if (terms.length == 0) {
@@ -148,6 +156,7 @@ function highlightField(field, container) {
     let orig = container.querySelector('anki-editable');
 
     // Only do work if we have a match
+    // TODO: redundant now
     let count = matchCount(orig.innerHTML, re);
     if (!count) {
       return;
@@ -157,8 +166,26 @@ function highlightField(field, container) {
 
     let overlay = orig.cloneNode(true);
     orig.style.display = 'none';
-    overlay.innerHTML = overlay.innerHTML.replace(re,
-      "<span style='background-color: #fbfb82; color: black;'>$&</span>");
+
+    function highlightInChildren(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            let matches = [...node.data.matchAll(re)];
+            matches.forEach((match) => {
+                CSS.highlights.get('match').add(new StaticRange({
+                    'startContainer': node,
+                    'endContainer': node,
+                    'startOffset': match.index,
+                    'endOffset': match.index + match[0].length
+                }));
+            });
+        } else {
+            node.childNodes.forEach(n => highlightInChildren(n))
+        }
+    }
+
+    highlightInChildren(overlay);
+
+
     overlay.setAttribute('clone', true);
     container.append(overlay);
     overlay.addEventListener('focus', cloneOnFocus);
