@@ -143,34 +143,21 @@ function beginHighlighter() {
     }
 }
 
-function strip(html){
-   let doc = new DOMParser().parseFromString(html, 'text/html');
-   return doc.body.textContent || "";
-}
-
 // Highlight a single field
 function highlightField(field, container) {
     if (terms.length == 0) {
       return;
     }
+
     let orig = container.querySelector('anki-editable');
-
-    // Only do work if we have a match
-    // TODO: redundant now
-    let count = matchCount(orig.innerHTML, re);
-    if (!count) {
-      return;
-    }
-    matched_total += count;
-    matched_fields++;
-
     let overlay = orig.cloneNode(true);
-    orig.style.display = 'none';
 
+    let matched = 0;
     function highlightInChildren(node) {
         if (node.nodeType === Node.TEXT_NODE) {
             let matches = [...node.data.matchAll(re)];
             matches.forEach((match) => {
+                matched++;
                 CSS.highlights.get('match').add(new StaticRange({
                     'startContainer': node,
                     'endContainer': node,
@@ -182,10 +169,16 @@ function highlightField(field, container) {
             node.childNodes.forEach(n => highlightInChildren(n))
         }
     }
-
     highlightInChildren(overlay);
 
+    if (!matched) {
+        return
+    }
 
+    matched_total += matched;
+    matched_fields++;
+
+    orig.style.display = 'none';
     overlay.setAttribute('clone', true);
     container.append(overlay);
     overlay.addEventListener('focus', cloneOnFocus);

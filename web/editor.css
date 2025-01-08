@@ -1,6 +1,6 @@
 ::highlight(match) {
-	background-color: #fbfb82;
-	color: #000;
+  background-color: #fbfb82;
+  color: #000;
 }
 
 #qsah-controls {
@@ -11,7 +11,7 @@
 }
 
 #qsah-controls > * {
-    margin: 0 4px;
+  margin: 0 4px;
 }
 
 #qsah-separator {
