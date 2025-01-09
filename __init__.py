@@ -1,4 +1,4 @@
-# https://github.com/hssm/quick-search-and-highlight
+# https://github.com/hssm/browser-search-result-highlighter
 # Version 1.3
 
 import json
@@ -13,13 +13,13 @@ from .utils.parser import parse_search
 
 addon_package = mw.addonManager.addon_from_module(__name__)
 
-class QuickSearchAndHighlight:
+class BrowserSearchResultHighlighter:
     def __init__(self, mw):
         self.mw = mw
         self.filter_terms = []
 
     def editor_init(self, editor):
-        config = mw.col.get_config('qsah', {'auto': True})
+        config = mw.col.get_config('bsrh', {'auto': True})
         auto = json.dumps(config['auto'])
         editor.web.eval(f"addControls({auto})")
 
@@ -32,7 +32,7 @@ class QuickSearchAndHighlight:
     def did_search(self, ctx: SearchContext):
         """Search has happened (regardless of source). Do highlight."""
         self.filter_terms = parse_search(ctx.search)
-        print("qsah: Highlighting these terms: ", self.filter_terms)
+        print("bsrh: Highlighting these terms: ", self.filter_terms)
 
 
     def on_webview_will_set_content(self, web_content: WebContent, context):
@@ -44,7 +44,7 @@ class QuickSearchAndHighlight:
     def editor_did_load_note(self, editor, focusTo=None) -> None:
         if editor.editorMode is EditorMode.BROWSER:
             # TODO: is there a better way to escape everything?
-            terms = json.dumps(qsah.filter_terms)
+            terms = json.dumps(bsrh.filter_terms)
             terms = terms.replace("'", r"\'")
             terms = terms.replace("\\\\", r"\\\\")
             terms = terms.replace("|", r"\\\\|")
@@ -53,22 +53,22 @@ class QuickSearchAndHighlight:
             editor.web.eval("beginHighlighter()")
 
     def on_js_message(self, handled, message, context):
-        if not message.startswith('QSAH:'):
+        if not message.startswith('BSRH:'):
             return handled
 
         vals = json.loads(message[5:])
-        config = mw.col.get_config('qsah', dict())
+        config = mw.col.get_config('bsrh', dict())
         config['auto'] = vals['auto']
-        mw.col.set_config('qsah', config)
+        mw.col.set_config('bsrh', config)
         return True, None
 
 mw.addonManager.setWebExports(__name__, r"web/.*")
-qsah = QuickSearchAndHighlight(mw)
+bsrh = BrowserSearchResultHighlighter(mw)
 
 # Hooks
-gui_hooks.browser_will_show.append(qsah.browser_will_show)
-gui_hooks.browser_did_search.append(qsah.did_search)
-gui_hooks.webview_will_set_content.append(qsah.on_webview_will_set_content)
-gui_hooks.editor_did_load_note.append(qsah.editor_did_load_note)
-gui_hooks.editor_did_init.append(qsah.editor_init)
-gui_hooks.webview_did_receive_js_message.append(qsah.on_js_message)
+gui_hooks.browser_will_show.append(bsrh.browser_will_show)
+gui_hooks.browser_did_search.append(bsrh.did_search)
+gui_hooks.webview_will_set_content.append(bsrh.on_webview_will_set_content)
+gui_hooks.editor_did_load_note.append(bsrh.editor_did_load_note)
+gui_hooks.editor_did_init.append(bsrh.editor_init)
+gui_hooks.webview_did_receive_js_message.append(bsrh.on_js_message)

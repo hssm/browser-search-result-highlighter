@@ -57,12 +57,12 @@ let observers = [];
 // UI controls
 let controls =
 `
-<span id="qsah-controls">
-    <input type="checkbox" id="qsah-auto" name="qsah-auto"/>
-    <label for="qsah-auto">Auto Scroll</label>
-    <span id="qsah-separator">|</span>
-    <span id="qsah-mtotal">0</span> matches in
-    <span id="qsah-mfields">0</span> fields
+<span id="bsrh-controls">
+    <input type="checkbox" id="bsrh-auto" name="bsrh-auto"/>
+    <label for="bsrh-auto">Auto Scroll</label>
+    <span id="bsrh-separator">|</span>
+    <span id="bsrh-mtotal">0</span> matches in
+    <span id="bsrh-mfields">0</span> fields
 </span>
 `
 
@@ -80,7 +80,7 @@ function addControls(auto) {
         return;
     }
     toolbar.insertAdjacentHTML("beforeend", controls);
-    let checkbox = toolbar.querySelector('#qsah-auto');
+    let checkbox = toolbar.querySelector('#bsrh-auto');
     checkbox.addEventListener('change', on_auto);
     auto_scroll = auto;
     checkbox.checked = auto;
@@ -90,8 +90,8 @@ function addControls(auto) {
 }
 
 function updateControls() {
-    document.getElementById('qsah-mtotal').innerHTML = matched_total;
-    document.getElementById('qsah-mfields').innerHTML = matched_fields;
+    document.getElementById('bsrh-mtotal').innerHTML = matched_total;
+    document.getElementById('bsrh-mfields').innerHTML = matched_fields;
 }
 
 // Build a regex from the string given to us by python
@@ -330,5 +330,5 @@ function removeHiddenShadow(container) {
 
 function on_auto(event) {
   auto_scroll = event.target.checked;
-  pycmd('QSAH:' + JSON.stringify({'auto': auto_scroll}));
+  pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
 }
