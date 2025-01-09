@@ -37,7 +37,6 @@ const watch = (mutations, observer) => {
             let code_mirror = container.host
                               .closest('.editing-area')
                               .querySelector('.CodeMirror textarea');
-            removeOverlay(container);
             has_focus = null;
             has_focus_code = code_mirror;
             observer.disconnect();
@@ -103,7 +102,6 @@ function parseTerms() {
 // Do initial work after note loads.
 function beginHighlighter() {
     // Clean slate when switching notes
-    removeAllOverlays();
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
@@ -149,8 +147,7 @@ function highlightField(field, container) {
       return;
     }
 
-    let orig = container.querySelector('anki-editable');
-    let overlay = orig.cloneNode(true);
+    let source = container.querySelector('anki-editable');
 
     let matched = 0;
     function highlightInChildren(node) {
@@ -169,7 +166,7 @@ function highlightField(field, container) {
             node.childNodes.forEach(n => highlightInChildren(n))
         }
     }
-    highlightInChildren(overlay);
+    highlightInChildren(source);
 
     if (!matched) {
         return
@@ -178,14 +175,8 @@ function highlightField(field, container) {
     matched_total += matched;
     matched_fields++;
 
-    orig.style.display = 'none';
-    overlay.setAttribute('clone', true);
-    container.append(overlay);
-    overlay.addEventListener('focus', cloneOnFocus);
-    overlay.addEventListener('mouseover', cloneMouseover);
-    orig.addEventListener('focus', origOnFocus);
-    orig.addEventListener('mouseleave', origOnMouseleave);
-    orig.addEventListener('blur', origOnBlur);
+    source.addEventListener('focus', origOnFocus);
+    source.addEventListener('blur', origOnBlur);
 
     let code_mirror = container.host
                         .closest('.editing-area')
@@ -199,112 +190,40 @@ function highlightField(field, container) {
     }
 }
 
-// When loading a note, remove overlay from all fields. Field
-// containers are reused so we can't rely on them being new and
-// empty on card change.
-function removeAllOverlays() {
-    let fields = document.querySelectorAll('.field-container .rich-text-editable');
-    fields.forEach((f) => {
-        let container = f.shadowRoot;
-        removeOverlay(container);
-        removeHiddenShadow(container);
-    });
+function removeAllHighlighting() {
+
 }
 
-// Remove overlay from a single field
-function removeOverlay(container) {
-    let clone = container.querySelector('anki-editable[clone]');
-    if (clone) {
-        let orig = clone.previousElementSibling;
-        orig.style.display = 'block';
-        clone.remove();
-    }
-}
+function removeHighlighting(container) {
 
-
-/*
-We still need to let the user click into a field and edit the original (not
-the overlay). These events let us hide the overlay when the user hovers over
-or focuses on a field and rebuild the overlay when they leave it.
-
-It does change the focus interactions compared to the original but it's a
-tradeoff that has to be made to gain this feature.
-
-Focus events and positioning in a contenteditable inside a shadow dom is 100%
-broken and cannot be used for any clever tricks to mask focus switching
-seamlessly. This is the clever trick. It masks it well enough.
-*/
-
-function cloneMouseover(event) {
-  let clone = event.currentTarget;
-  let orig = clone.previousElementSibling;
-  let container = orig.parentNode;
-  removeOverlay(container);
-  // Add yellow glow to show it's hidden
-  addHiddenShadow(container);
-}
-
-// When tabbing in
-function cloneOnFocus(event) {
-  let clone = event.currentTarget;
-  let orig = clone.previousElementSibling;
-  let container = orig.parentNode;
-  removeOverlay(container);
-  orig.focus();
-  has_focus = orig;
 }
 
 function origOnFocus(event) {
+  console.log("Remove highlighting here!");
   let orig = event.currentTarget;
   let container = orig.parentNode;
   has_focus = orig;
-  removeHiddenShadow(container);
-
-}
-
-function origOnMouseleave(event) {
-  let orig = event.currentTarget;
-  if (has_focus == orig) {
-    return;
-  }
-  let container = orig.parentNode;
-  let code_mirror = container.host
-                    .closest('.editing-area')
-                    .querySelector('.CodeMirror textarea');
-  if (has_focus_code && has_focus_code == code_mirror) {
-    return;
-  }
-  let clone = container.querySelector('anki-editable[clone]');
-  if (clone) {
-    return;
-  }
-  highlightField(orig, container);
-  has_focus = null;
-  removeHiddenShadow(container);
 }
 
 function origOnBlur(event) {
+  console.log("Add highlighting here!")
   let orig = event.currentTarget;
   let container = orig.parentNode;
-  let clone = container.querySelector('anki-editable[clone]');
-  if (clone) {
-    return;
-  }
   highlightField(orig, container);
   has_focus = null;
-  removeHiddenShadow(container);
 }
 
 function codeOnFocus(event) {
+  console.log("Remove highlighting here!");
   let code_mirror = event.currentTarget;
   let container = code_mirror
                     .closest('.editing-area')
                     .querySelector('.rich-text-editable').shadowRoot;
-  removeOverlay(container);
   has_focus_code = code_mirror;
 }
 
 function codeOnBlur(event) {
+  console.log("Add highlighting here!")
   let code_mirror = event.currentTarget;
   let container = code_mirror
                     .closest('.editing-area')
@@ -313,18 +232,6 @@ function codeOnBlur(event) {
   highlightField(orig, container);
   has_focus_code = null;
 }
-
-function addHiddenShadow(container) {
-
-  container.host.closest('.editor-field').style.outline = '2px solid #e6e678';
-  if (document.documentElement.getAttribute('data-bs-theme') == 'dark') {
-    container.host.closest('.editor-field').style.outline = '2px solid #6f6b44';
-  }
-}
-function removeHiddenShadow(container) {
-  container.host.closest('.editor-field').style.outline = '';
-}
-
 
 // UI controls
 
