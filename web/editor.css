@@ -3,21 +3,21 @@
   color: #000;
 }
 
-#qsah-controls {
+#bsrh-controls {
   margin-left: auto;
   margin-right: 8px;
   display: flex;
   align-items: center;
 }
 
-#qsah-controls > * {
+#bsrh-controls > * {
   margin: 0 4px;
 }
 
-#qsah-separator {
+#bsrh-separator {
   color: #949494;
 }
 
-#qsah-matched {
+#bsrh-matched {
   width: 3em;
 }
