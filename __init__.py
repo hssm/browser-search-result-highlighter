@@ -7,7 +7,6 @@ from aqt import *
 from aqt import gui_hooks
 from aqt.browser import SearchContext
 from aqt.editor import Editor, EditorMode
-from aqt.theme import theme_manager
 from aqt.webview import WebContent
 
 from .utils.parser import parse_search
@@ -18,7 +17,6 @@ class QuickSearchAndHighlight:
     def __init__(self, mw):
         self.mw = mw
         self.filter_terms = []
-        self.last_search = ''
 
     def editor_init(self, editor):
         config = mw.col.get_config('qsah', {'auto': True})
