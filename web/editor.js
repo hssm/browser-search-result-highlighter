@@ -83,9 +83,6 @@ function addControls(auto) {
     checkbox.addEventListener('change', on_auto);
     auto_scroll = auto;
     checkbox.checked = auto;
-
-    // The highlighter
-    CSS.highlights.set('match', new Highlight());
 }
 
 function updateControls() {
@@ -102,6 +99,8 @@ function parseTerms() {
 // Do initial work after note loads.
 function beginHighlighter() {
     // Clean slate when switching notes
+    CSS.highlights.clear();
+    CSS.highlights.set('match', new Highlight());
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
@@ -114,8 +113,7 @@ function beginHighlighter() {
     // Highlight all fields
     let fields = document.querySelectorAll('.field-container .rich-text-editable');
     fields.forEach((f) => {
-      let container = f.shadowRoot;
-      highlightField(f, container);
+      highlightField(f.shadowRoot);
     })
 
     // Attach observers for the HTML editor mode (detect when it appears).
@@ -134,6 +132,7 @@ function beginHighlighter() {
       observer.observe(c, {childList: true, subtree: true});
     })
 
+    // Set UI
     updateControls();
 
     if (auto_scroll && scroll_to) {
@@ -142,7 +141,7 @@ function beginHighlighter() {
 }
 
 // Highlight a single field
-function highlightField(field, container) {
+function highlightField(container) {
     if (terms.length == 0) {
       return;
     }
@@ -155,12 +154,14 @@ function highlightField(field, container) {
             let matches = [...node.data.matchAll(re)];
             matches.forEach((match) => {
                 matched++;
-                CSS.highlights.get('match').add(new StaticRange({
+                let r = new StaticRange({
                     'startContainer': node,
                     'endContainer': node,
                     'startOffset': match.index,
                     'endOffset': match.index + match[0].length
-                }));
+                });
+                r.owner = container;
+                CSS.highlights.get('match').add(r);
             });
         } else {
             node.childNodes.forEach(n => highlightInChildren(n))
@@ -190,51 +191,48 @@ function highlightField(field, container) {
     }
 }
 
-function removeAllHighlighting() {
-
-}
-
-function removeHighlighting(container) {
-
+function unhighlightField(container) {
+    CSS.highlights.get('match').forEach(sr => {
+        if (sr.owner == container) {
+            CSS.highlights.get('match').delete(sr);
+        }
+    })
 }
 
 function origOnFocus(event) {
-  console.log("Remove highlighting here!");
   let orig = event.currentTarget;
   let container = orig.parentNode;
   has_focus = orig;
+  unhighlightField(container);
 }
 
 function origOnBlur(event) {
-  console.log("Add highlighting here!")
   let orig = event.currentTarget;
   let container = orig.parentNode;
-  highlightField(orig, container);
+  highlightField(container);
   has_focus = null;
 }
 
 function codeOnFocus(event) {
-  console.log("Remove highlighting here!");
   let code_mirror = event.currentTarget;
   let container = code_mirror
                     .closest('.editing-area')
                     .querySelector('.rich-text-editable').shadowRoot;
   has_focus_code = code_mirror;
+  unhighlightField(container);
 }
 
 function codeOnBlur(event) {
-  console.log("Add highlighting here!")
   let code_mirror = event.currentTarget;
   let container = code_mirror
                     .closest('.editing-area')
                     .querySelector('.rich-text-editable').shadowRoot;
   let orig = container.querySelector('anki-editable');
-  highlightField(orig, container);
+  highlightField(container);
   has_focus_code = null;
 }
 
 // UI controls
-
 function on_auto(event) {
   auto_scroll = event.target.checked;
   pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
