@@ -30,39 +30,12 @@ class QuickSearchAndHighlight:
         self.table = browser.table
         self.editor = browser.editor
         self.col = browser.col
-        # Text box changes
-        self.browser.form.searchEdit.lineEdit().textEdited.connect(self.on_text_edited)
-        # Drop-down selection
-        self.browser.form.searchEdit.currentIndexChanged.connect(self.on_current_index_changed)
 
     def did_search(self, ctx: SearchContext):
         """Search has happened (regardless of source). Do highlight."""
         self.filter_terms = parse_search(ctx.search)
         print("qsah: Highlighting these terms: ", self.filter_terms)
 
-    def on_text_edited(self):
-        """Textbox text has changed. Do a search."""
-        text = self.browser.current_search()
-        if text != self.last_search:
-            try:
-                normed = self.col.build_search_string(text)
-                self.last_search = normed
-                self.table.search(normed)
-                self.browser.form.searchEdit.setStyleSheet("")
-            except Exception as err:
-                # This is breaking the browser UI ???
-                # if theme_manager.night_mode:
-                #     self.browser.form.searchEdit.setStyleSheet("QComboBox {background-color: #4a3a36;}")
-                # else:
-                #     self.browser.form.searchEdit.setStyleSheet("QComboBox {background-color: #ffc9b9;}")
-                # Fake a search to remove previous highlights as current search is not valid
-                self.filter_terms = []
-                self.editor_did_load_note(self.editor)
-
-    def on_current_index_changed(self, index):
-        """Do a search on drop-down selection. -1 is text edit. Skip those as we handle already"""
-        if index >= 0:
-            self.on_text_edited()
 
     def on_webview_will_set_content(self, web_content: WebContent, context):
         if not isinstance(context, Editor):
@@ -80,7 +53,6 @@ class QuickSearchAndHighlight:
             editor.web.eval(f"terms_str = '{terms}'")
             editor.web.eval(f"parseTerms()")
             editor.web.eval("beginHighlighter()")
-
 
     def on_js_message(self, handled, message, context):
         if not message.startswith('QSAH:'):
