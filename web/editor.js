@@ -7,10 +7,6 @@ let terms = null;
 // Regex to search/replace
 let re = null;
 
-// Currently focused element. Avoid exit events while still in it.
-let has_focus = null;
-let has_focus_code = null;
-
 // First match found to scroll to
 let scroll_to = null;
 
@@ -37,8 +33,6 @@ const watch = (mutations, observer) => {
             let code_mirror = container.host
                               .closest('.editing-area')
                               .querySelector('.CodeMirror textarea');
-            has_focus = null;
-            has_focus_code = code_mirror;
             observer.disconnect();
 
             code_mirror.addEventListener('focus', codeOnFocus);
@@ -64,12 +58,6 @@ let controls =
     <span id="bsrh-mfields">0</span> fields
 </span>
 `
-
-// Count occurrences in regex
-const matchCount = (str, re) => {
-  return str?.match(re)?.length ?? 0;
-};
-
 
 function addControls(auto) {
     // First load has a race condition. Keep trying until toolbar appears.
@@ -147,7 +135,6 @@ function highlightField(container) {
     }
 
     let source = container.querySelector('anki-editable');
-
     let matched = 0;
     function highlightInChildren(node) {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -202,7 +189,6 @@ function unhighlightField(container) {
 function origOnFocus(event) {
   let orig = event.currentTarget;
   let container = orig.parentNode;
-  has_focus = orig;
   unhighlightField(container);
 }
 
@@ -210,7 +196,6 @@ function origOnBlur(event) {
   let orig = event.currentTarget;
   let container = orig.parentNode;
   highlightField(container);
-  has_focus = null;
 }
 
 function codeOnFocus(event) {
@@ -218,7 +203,6 @@ function codeOnFocus(event) {
   let container = code_mirror
                     .closest('.editing-area')
                     .querySelector('.rich-text-editable').shadowRoot;
-  has_focus_code = code_mirror;
   unhighlightField(container);
 }
 
@@ -229,7 +213,6 @@ function codeOnBlur(event) {
                     .querySelector('.rich-text-editable').shadowRoot;
   let orig = container.querySelector('anki-editable');
   highlightField(container);
-  has_focus_code = null;
 }
 
 // UI controls
