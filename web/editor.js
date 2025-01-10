@@ -134,7 +134,11 @@ function highlightField(container) {
       return;
     }
 
-    let source = container.querySelector('anki-editable');
+    let editable = container.querySelector('anki-editable');
+    let code_mirror = container.host
+                        .closest('.editing-area')
+                        .querySelector('.CodeMirror textarea');
+
     let matched = 0;
     function highlightInChildren(node) {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -154,7 +158,10 @@ function highlightField(container) {
             node.childNodes.forEach(n => highlightInChildren(n))
         }
     }
-    highlightInChildren(source);
+    highlightInChildren(editable);
+    if (code_mirror) {
+        highlightInChildren(code_mirror.closest('.CodeMirror'));
+    }
 
     if (!matched) {
         return
@@ -163,12 +170,10 @@ function highlightField(container) {
     matched_total += matched;
     matched_fields++;
 
-    source.addEventListener('focus', origOnFocus);
-    source.addEventListener('blur', origOnBlur);
+    editable.addEventListener('focus', editableOnFocus);
+    editable.addEventListener('blur', editableOnBlur);
 
-    let code_mirror = container.host
-                        .closest('.editing-area')
-                        .querySelector('.CodeMirror textarea');
+
     if (code_mirror) {
       code_mirror.addEventListener('focus', codeOnFocus);
       code_mirror.addEventListener('blur', codeOnBlur);
@@ -186,15 +191,15 @@ function unhighlightField(container) {
     })
 }
 
-function origOnFocus(event) {
-  let orig = event.currentTarget;
-  let container = orig.parentNode;
+function editableOnFocus(event) {
+  let editable = event.currentTarget;
+  let container = editable.parentNode;
   unhighlightField(container);
 }
 
-function origOnBlur(event) {
-  let orig = event.currentTarget;
-  let container = orig.parentNode;
+function editableOnBlur(event) {
+  let editable = event.currentTarget;
+  let container = editable.parentNode;
   highlightField(container);
 }
 
@@ -211,7 +216,7 @@ function codeOnBlur(event) {
   let container = code_mirror
                     .closest('.editing-area')
                     .querySelector('.rich-text-editable').shadowRoot;
-  let orig = container.querySelector('anki-editable');
+  let editable = container.querySelector('anki-editable');
   highlightField(container);
 }
 
