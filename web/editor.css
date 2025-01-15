@@ -21,3 +21,10 @@
 #bsrh-matched {
   width: 3em;
 }
+
+span[bsrh-moreincode=true] {
+    opacity: 1 !important;
+}
+span[bsrh-moreincode=true] button > span {
+    outline: 2px dashed #fbfb82;
+}

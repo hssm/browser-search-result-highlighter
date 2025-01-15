@@ -19,6 +19,10 @@ let matched_total = 0;
 // Number of fields with matches
 let matched_fields = 0;
 
+const matchCount = (str, re) => {
+  return str?.match(re)?.length ?? 0;
+};
+
 // Observer to detect code button/shortcut
 const watch = (mutations, observer) => {
     for (let i = 0; i < mutations.length; i++) {
@@ -27,12 +31,8 @@ const watch = (mutations, observer) => {
         try {
           let node = mutation.addedNodes[0];
           if (node.classList.contains('CodeMirror-line')) {
-            let container = node
-                              .closest('.editing-area')
-                              .querySelector('.rich-text-editable').shadowRoot;
-            let code_mirror = container.host
-                              .closest('.editing-area')
-                              .querySelector('.CodeMirror textarea');
+            let container = node.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
+            let code_mirror = container.host.closest('.editing-area').querySelector('.CodeMirror textarea');
             observer.disconnect();
 
             code_mirror.addEventListener('focus', codeOnFocus);
@@ -92,6 +92,7 @@ function beginHighlighter() {
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
+    unhighlightCodeExpanders();
 
     // No work to do if no search terms
     if (terms.length == 0) {
@@ -104,10 +105,7 @@ function beginHighlighter() {
       highlightField(f.shadowRoot);
     })
 
-    // Attach observers for the HTML editor mode (detect when it appears).
-    // There's both a button and a keyboard shortcut. The editor is auto-focused
-    // when it appears before we've set up our event listeners so they'll miss
-    // it and our focus detection becomes wrong. This corrects it.
+    // Attach observers for the HTML editor (detect when it appears).
     // Clear out the old ones first.
     observers.forEach((o) => {
         o.disconnect();
@@ -135,16 +133,21 @@ function highlightField(container) {
     }
 
     let editable = container.querySelector('anki-editable');
-    let code_mirror = container.host
-                        .closest('.editing-area')
-                        .querySelector('.CodeMirror textarea');
+    let code_mirror = container.host.closest('.editing-area').querySelector('.CodeMirror textarea');
+    if (code_mirror && code_mirror.closest('.plain-text-input').hasAttribute('hidden')) {
+        code_mirror = null;
+    }
+    // Note on counting matches: We count the matches on the text nodes in the field instead of the whole field's
+    // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
+    // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
 
-    let matched = 0;
+
+    let highlightCount = 0;
     function highlightInChildren(node) {
         if (node.nodeType === Node.TEXT_NODE) {
             let matches = [...node.data.matchAll(re)];
             matches.forEach((match) => {
-                matched++;
+                highlightCount++;
                 let r = new StaticRange({
                     'startContainer': node,
                     'endContainer': node,
@@ -159,24 +162,32 @@ function highlightField(container) {
         }
     }
     highlightInChildren(editable);
+    let match_count_editable = highlightCount;
+    let match_count_code = matchCount(editable.innerHTML, re);
+
     if (code_mirror) {
         highlightInChildren(code_mirror.closest('.CodeMirror'));
     }
 
-    if (!matched) {
+    // Let's not try to do unnecessary work
+    if (match_count_code + match_count_editable == 0) {
         return
     }
 
-    matched_total += matched;
     matched_fields++;
+    matched_total += Math.max(match_count_editable, match_count_code);
 
-    editable.addEventListener('focus', editableOnFocus);
+    // There are matches not visible to the user but are inside code. Highlight code button to inform.
+    if (match_count_code > match_count_editable) {
+        highlightCodeExpander(container);
+    }
+
+    editable.addEventListener('focus', editableOnFocus); // TODO: remove stale listeners?
     editable.addEventListener('blur', editableOnBlur);
 
-
     if (code_mirror) {
-      code_mirror.addEventListener('focus', codeOnFocus);
-      code_mirror.addEventListener('blur', codeOnBlur);
+        code_mirror.addEventListener('focus', codeOnFocus);
+        code_mirror.addEventListener('blur', codeOnBlur);
     }
     if (!scroll_to) {
         scroll_to = container.host.closest('.field-container');
@@ -205,19 +216,26 @@ function editableOnBlur(event) {
 
 function codeOnFocus(event) {
   let code_mirror = event.currentTarget;
-  let container = code_mirror
-                    .closest('.editing-area')
-                    .querySelector('.rich-text-editable').shadowRoot;
+  let container = code_mirror.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
   unhighlightField(container);
 }
 
 function codeOnBlur(event) {
   let code_mirror = event.currentTarget;
-  let container = code_mirror
-                    .closest('.editing-area')
-                    .querySelector('.rich-text-editable').shadowRoot;
-  let editable = container.querySelector('anki-editable');
+  let container = code_mirror.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
   highlightField(container);
+}
+
+function highlightCodeExpander(container) {
+    let button = container.host.closest('.field-container').querySelector('.plain-text-badge');
+    button.setAttribute('bsrh-moreincode', true);
+}
+
+function unhighlightCodeExpanders() {
+    let buttons = document.querySelectorAll('.field-container .plain-text-badge');
+    buttons.forEach((button) => {
+      button.removeAttribute('bsrh-moreincode');
+    })
 }
 
 // UI controls
