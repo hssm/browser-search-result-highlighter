@@ -22,9 +22,9 @@
   width: 3em;
 }
 
-span[bsrh-moreincode=true] {
+.field-container[bsrh-moreincode=true] .plain-text-badge {
     opacity: 1 !important;
 }
-span[bsrh-moreincode=true] button > span {
+.field-container[bsrh-moreincode=true] .plain-text-badge button > span {
     outline: 2px dashed #fbfb82;
 }

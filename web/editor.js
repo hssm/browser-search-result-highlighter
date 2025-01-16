@@ -92,7 +92,8 @@ function beginHighlighter() {
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
-    unhighlightCodeExpanders();
+    let containers = document.querySelectorAll('.field-container');
+    containers.forEach((c) => { unhighlightCodeExpander(c); })
 
     // No work to do if no search terms
     if (terms.length == 0) {
@@ -100,16 +101,11 @@ function beginHighlighter() {
     }
 
     // Highlight all fields
-    let containers = document.querySelectorAll('.field-container');
-    containers.forEach((c) => {
-      highlightField(c);
-    })
+    containers.forEach((c) => { highlightField(c); })
 
     // Attach observers for the HTML editor (detect when it appears).
     // Clear out the old ones first.
-    observers.forEach((o) => {
-        o.disconnect();
-    })
+    observers.forEach((o) => { o.disconnect(); })
     observers = [];
     containers.forEach((c) => {
       let observer = new MutationObserver(watch);
@@ -178,7 +174,7 @@ function highlightField(container) {
 
     // There are matches not visible to the user but are inside code. Highlight code button to inform.
     if (match_count_code > match_count_editable) {
-        highlightCodeExpander(field_root);
+        highlightCodeExpander(container);
     }
 
     editable.addEventListener('focus', editableOnFocus); // TODO: remove stale listeners?
@@ -225,16 +221,12 @@ function codeOnBlur(event) {
   highlightField(container);
 }
 
-function highlightCodeExpander(field_root) {
-    let button = field_root.host.closest('.field-container').querySelector('.plain-text-badge');
-    button.setAttribute('bsrh-moreincode', true);
+function highlightCodeExpander(container) {
+    container.setAttribute('bsrh-moreincode', true);
 }
 
-function unhighlightCodeExpanders() {
-    let buttons = document.querySelectorAll('.field-container .plain-text-badge');
-    buttons.forEach((button) => {
-      button.removeAttribute('bsrh-moreincode');
-    })
+function unhighlightCodeExpander(container) {
+    container.removeAttribute('bsrh-moreincode');
 }
 
 // UI controls
