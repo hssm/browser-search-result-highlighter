@@ -173,7 +173,6 @@ function highlightField(container) {
     matched_total += Math.max(match_count_editable, match_count_code);
 
     // There are matches not visible to the user but are inside code. Highlight code button to inform.
-    // TODO: should we only do this on 0 ?
     if (match_count_code > match_count_editable) {
         highlightCodeExpander(container);
     }

@@ -1,6 +1,11 @@
 ::highlight(match) {
-  background-color: #fbfb82;
-  color: #000;
+  background-color: #ffe500;
+  color: #121212;
+}
+
+.night_mode ::highlight(match) {
+  background-color: #fff068;
+  color: #121212;
 }
 
 #bsrh-controls {
@@ -23,8 +28,14 @@
 }
 
 .field-container[bsrh-moreincode=true] .plain-text-badge {
-    opacity: 1 !important;
+  opacity: 1 !important;
 }
 .field-container[bsrh-moreincode=true] .plain-text-badge button > span {
-    outline: 2px dashed #fbfb82;
+  outline: 2px dashed #a6a070;
+  background: #ffe500;
+}
+
+.night_mode .field-container[bsrh-moreincode=true] .plain-text-badge button > span {
+  outline: 2px dashed #fff068;
+  background: unset;
 }
