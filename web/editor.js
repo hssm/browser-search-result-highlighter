@@ -31,8 +31,8 @@ const watch = (mutations, observer) => {
         try {
           let node = mutation.addedNodes[0];
           if (node.classList.contains('CodeMirror-line')) {
-            let container = node.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
-            let code_mirror = container.host.closest('.editing-area').querySelector('.CodeMirror textarea');
+            let field_root = node.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
+            let code_mirror = field_root.host.closest('.editing-area').querySelector('.CodeMirror textarea');
             observer.disconnect();
 
             code_mirror.addEventListener('focus', codeOnFocus);
@@ -100,9 +100,9 @@ function beginHighlighter() {
     }
 
     // Highlight all fields
-    let fields = document.querySelectorAll('.field-container .rich-text-editable');
-    fields.forEach((f) => {
-      highlightField(f.shadowRoot);
+    let containers = document.querySelectorAll('.field-container');
+    containers.forEach((c) => {
+      highlightField(c);
     })
 
     // Attach observers for the HTML editor (detect when it appears).
@@ -111,8 +111,7 @@ function beginHighlighter() {
         o.disconnect();
     })
     observers = [];
-    let outer_containers = document.querySelectorAll('.field-container');
-    outer_containers.forEach((c) => {
+    containers.forEach((c) => {
       let observer = new MutationObserver(watch);
       observers.push(observer);
       observer.observe(c, {childList: true, subtree: true});
@@ -131,9 +130,9 @@ function highlightField(container) {
     if (terms.length == 0) {
       return;
     }
-
-    let editable = container.querySelector('anki-editable');
-    let code_mirror = container.host.closest('.editing-area').querySelector('.CodeMirror textarea');
+    let field_root = container.querySelector('.rich-text-editable').shadowRoot;
+    let editable = field_root.querySelector('anki-editable');
+    let code_mirror = container.querySelector('.CodeMirror textarea');
     if (code_mirror && code_mirror.closest('.plain-text-input').hasAttribute('hidden')) {
         code_mirror = null;
     }
@@ -179,7 +178,7 @@ function highlightField(container) {
 
     // There are matches not visible to the user but are inside code. Highlight code button to inform.
     if (match_count_code > match_count_editable) {
-        highlightCodeExpander(container);
+        highlightCodeExpander(field_root);
     }
 
     editable.addEventListener('focus', editableOnFocus); // TODO: remove stale listeners?
@@ -190,44 +189,44 @@ function highlightField(container) {
         code_mirror.addEventListener('blur', codeOnBlur);
     }
     if (!scroll_to) {
-        scroll_to = container.host.closest('.field-container');
+        scroll_to = container;
     }
 }
 
 function unhighlightField(container) {
-    CSS.highlights.get('match').forEach(sr => {
-        if (sr.owner == container) {
-            CSS.highlights.get('match').delete(sr);
+    CSS.highlights.get('match').forEach(hl => {
+        if (hl.owner == container) {
+            CSS.highlights.get('match').delete(hl);
         }
     })
 }
 
 function editableOnFocus(event) {
   let editable = event.currentTarget;
-  let container = editable.parentNode;
+  let container = editable.parentNode.host.closest('.field-container');
   unhighlightField(container);
 }
 
 function editableOnBlur(event) {
   let editable = event.currentTarget;
-  let container = editable.parentNode;
+  let container = editable.parentNode.host.closest('.field-container');
   highlightField(container);
 }
 
 function codeOnFocus(event) {
   let code_mirror = event.currentTarget;
-  let container = code_mirror.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
+  let container = code_mirror.closest('.field-container');
   unhighlightField(container);
 }
 
 function codeOnBlur(event) {
   let code_mirror = event.currentTarget;
-  let container = code_mirror.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
+  let container = code_mirror.closest('.field-container');
   highlightField(container);
 }
 
-function highlightCodeExpander(container) {
-    let button = container.host.closest('.field-container').querySelector('.plain-text-badge');
+function highlightCodeExpander(field_root) {
+    let button = field_root.host.closest('.field-container').querySelector('.plain-text-badge');
     button.setAttribute('bsrh-moreincode', true);
 }
 
