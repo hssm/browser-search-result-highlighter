@@ -33,8 +33,8 @@ const watch = (mutations, observer) => {
           if (node.classList.contains('CodeMirror-line')) {
             let field_root = node.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
             let code_mirror = field_root.host.closest('.editing-area').querySelector('.CodeMirror textarea');
-            observer.disconnect();
 
+            observer.disconnect();
             code_mirror.addEventListener('focus', codeOnFocus);
             code_mirror.addEventListener('blur', codeOnBlur);
             break;
@@ -173,6 +173,7 @@ function highlightField(container) {
     matched_total += Math.max(match_count_editable, match_count_code);
 
     // There are matches not visible to the user but are inside code. Highlight code button to inform.
+    // TODO: should we only do this on 0 ?
     if (match_count_code > match_count_editable) {
         highlightCodeExpander(container);
     }
@@ -212,7 +213,12 @@ function editableOnBlur(event) {
 function codeOnFocus(event) {
   let code_mirror = event.currentTarget;
   let container = code_mirror.closest('.field-container');
-  unhighlightField(container);
+  if (container.hasAttribute('bsrh-moreincode')) {
+    // Seems to be a race condition? This makes it work
+    setTimeout(() => {highlightField(container)}, 0)
+  } else {
+    unhighlightField(container);
+  }
 }
 
 function codeOnBlur(event) {
