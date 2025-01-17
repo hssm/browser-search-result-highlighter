@@ -97,6 +97,7 @@ function beginHighlighter() {
 
     // No work to do if no search terms
     if (terms.length == 0) {
+      updateControls();
       return;
     }
 
