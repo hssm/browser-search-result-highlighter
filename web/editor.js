@@ -68,7 +68,7 @@ function addControls(auto) {
     }
     toolbar.insertAdjacentHTML("beforeend", controls);
     let checkbox = toolbar.querySelector('#bsrh-auto');
-    checkbox.addEventListener('change', on_auto);
+    checkbox.addEventListener('change', onAuto);
     auto_scroll = auto;
     checkbox.checked = auto;
 }
@@ -117,7 +117,9 @@ function beginHighlighter() {
     updateControls();
 
     if (auto_scroll && scroll_to) {
-        scroll_to.scrollIntoViewIfNeeded();
+        // There's odd behaviour on the first load of a note type and when there's
+        // an image loading. Scrolling on the next loop gets the correct position.
+        setTimeout(() => { scroll_to.scrollIntoViewIfNeeded(); }, 0)
     }
 }
 
@@ -214,7 +216,7 @@ function codeOnFocus(event) {
   let container = code_mirror.closest('.field-container');
   if (container.hasAttribute('bsrh-moreincode')) {
     // Seems to be a race condition? This makes it work
-    setTimeout(() => {highlightField(container)}, 0)
+    setTimeout(() => { highlightField(container) }, 0)
   } else {
     unhighlightField(container);
   }
@@ -235,7 +237,7 @@ function unhighlightCodeExpander(container) {
 }
 
 // UI controls
-function on_auto(event) {
+function onAuto(event) {
   auto_scroll = event.target.checked;
   pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
 }
