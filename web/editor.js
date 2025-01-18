@@ -94,6 +94,9 @@ function beginHighlighter() {
     matched_total = 0;
     let containers = document.querySelectorAll('.field-container');
     containers.forEach((c) => { unhighlightCodeExpander(c); })
+    if (containers.length == 0) {
+      return;
+    }
 
     // No work to do if no search terms
     if (terms.length == 0) {
