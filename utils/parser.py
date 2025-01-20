@@ -1,3 +1,6 @@
+import re
+
+
 def parse_search(search):
     nodes = parse_nodes(search)
     terms = extract_searchable_terms(nodes)
@@ -127,7 +130,7 @@ def extract_searchable_terms(terms):
     return extracted
 
 def replace_special(term):
-    # Replace wildcards or escape special chars
+    # Replace anki wildcards
     if '_' in term:
         index = term.index('_')
         if index == 0 or term[index - 1] != '\\':
@@ -138,6 +141,10 @@ def replace_special(term):
             term = term.replace('*', '.*')
     if '\\:' in term:
         term = term.replace('\\:', ':')
+
+    # Escape regex special chars
+    #term = re.escape(term)
+
     if '(' in term:
         term = term.replace('(', '\\(')
     if ')' in term:

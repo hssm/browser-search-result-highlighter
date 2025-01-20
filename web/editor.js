@@ -4,8 +4,9 @@ let terms_str = null;
 // Parsed in javascript
 let terms = null;
 
-// Regex to search/replace
-let re = null;
+// Dictionary of regexes to find matches per field. Index is field name.
+// The empty string key is applicable to all fields.
+let res = null;
 
 // First match found to scroll to
 let scroll_to = null;
@@ -78,10 +79,9 @@ function updateControls() {
     document.getElementById('bsrh-mfields').innerHTML = matched_fields;
 }
 
-// Build a regex from the string given to us by python
+// Build regexes from the string given to us by python
 function parseTerms() {
   terms = JSON.parse(terms_str);
-  re = new RegExp(terms[''], "gi");
 }
 
 // Do initial work after note loads.
@@ -129,19 +129,36 @@ function beginHighlighter() {
 
 // Highlight a single field
 function highlightField(container) {
-    if (terms.length == 0) {
+    // Combine the regexes for field match and all match
+    current_res = []
+    if (terms[''].length) {
+        current_res.push(terms['']);
+    }
+    field_name = container.querySelector('.label-name').textContent;
+    Object.keys(terms).forEach(k => {
+        if (k.toLowerCase() == field_name.toLowerCase()) {
+            current_res.push(terms[k])
+        }
+    })
+    re = current_res.join('|');
+
+    // Didn't search for anything
+    if (re.length == 0) {
       return;
     }
+
+    re = new RegExp(re, "gi");
+
     let field_root = container.querySelector('.rich-text-editable').shadowRoot;
     let editable = field_root.querySelector('anki-editable');
     let code_mirror = container.querySelector('.CodeMirror textarea');
     if (code_mirror && code_mirror.closest('.plain-text-input').hasAttribute('hidden')) {
         code_mirror = null;
     }
+
     // Note on counting matches: We count the matches on the text nodes in the field instead of the whole field's
     // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
     // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
-
 
     let highlightCount = 0;
     function highlightInChildren(node) {
