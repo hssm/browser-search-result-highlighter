@@ -134,9 +134,15 @@ function highlightField(container) {
     if (terms[''].length) {
         current_res.push(terms['']);
     }
-    field_name = container.querySelector('.label-name').textContent;
+    field_name = container.querySelector('.label-name').textContent.toLowerCase();
     Object.keys(terms).forEach(k => {
-        if (k.toLowerCase() == field_name.toLowerCase()) {
+        k = k.toLowerCase();
+        if (k.endsWith('*')) {
+            let start = k.substr(0, k.length-1);
+            if (field_name.startsWith(start)) {
+                current_res.push(terms[k])
+            }
+        } else if (k == field_name) {
             current_res.push(terms[k])
         }
     })
