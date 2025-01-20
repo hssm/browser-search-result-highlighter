@@ -1,7 +1,8 @@
 def parse_search(search):
-    terms = parse_nodes(search)
-    return extract_searchable_terms(terms)
-
+    nodes = parse_nodes(search)
+    terms = extract_searchable_terms(nodes)
+    regex = build_regex_from_terms(terms)
+    return regex
 
 # Split search string by search terms
 def parse_nodes(search):
@@ -126,7 +127,7 @@ def extract_searchable_terms(terms):
     return extracted
 
 def replace_special(term):
-    # Replace wildcards before adding
+    # Replace wildcards or escape special chars
     if '_' in term:
         index = term.index('_')
         if index == 0 or term[index - 1] != '\\':
@@ -141,6 +142,8 @@ def replace_special(term):
         term = term.replace('(', '\\(')
     if ')' in term:
         term = term.replace(')', '\\)')
+    if '|' in term:
+        term = term.replace('|', '\\|')
 
     return term
 
@@ -173,7 +176,7 @@ def build_regex_from_terms(terms, specials=True):
 ignore = ['tag', 'deck', 'preset', 'card', 'is', 'flag', 'prop', 'added', 'edited', 'rated', 'introduced', 'nid', 'cid']
 
 if __name__ == "__main__":
-    search = ('dog (cat or mouse) (fish (house or land)) w:fish w:fish* w:"and also" "many fish" "some th_ng" front:*dog* '
+    search = ('dog (cat or mouse) (fish (house or land) -bike) w:fish w:fish* w:"and also" "many fish" "some th_ng" front:*dog* '
               'back:(cat or mouse -dog) w:3:30 3\\:30 "(text)"')
     nodes = parse_nodes(search)
     terms = extract_searchable_terms(nodes)

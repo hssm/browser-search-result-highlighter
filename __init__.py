@@ -47,7 +47,6 @@ class BrowserSearchResultHighlighter:
             terms = json.dumps(bsrh.filter_terms)
             terms = terms.replace("'", r"\'")
             terms = terms.replace("\\\\", r"\\\\")
-            terms = terms.replace("|", r"\\\\|")
             editor.web.eval(f"terms_str = '{terms}'")
             editor.web.eval(f"parseTerms()")
             editor.web.eval("beginHighlighter()")

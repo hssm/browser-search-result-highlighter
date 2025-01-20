@@ -81,7 +81,7 @@ function updateControls() {
 // Build a regex from the string given to us by python
 function parseTerms() {
   terms = JSON.parse(terms_str);
-  re = new RegExp('('+terms.join("|")+')', "gi");
+  re = new RegExp(terms[''], "gi");
 }
 
 // Do initial work after note loads.
