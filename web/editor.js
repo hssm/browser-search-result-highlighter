@@ -131,7 +131,7 @@ function beginHighlighter() {
 function highlightField(container) {
     // Combine the regexes for field match and all match
     current_res = []
-    if (terms[''].length) {
+    if (terms[''].length && terms[''] != '.*') {
         current_res.push(terms['']);
     }
     field_name = container.querySelector('.label-name').textContent.toLowerCase();
@@ -140,10 +140,14 @@ function highlightField(container) {
         if (k.endsWith('*')) {
             let start = k.substr(0, k.length-1);
             if (field_name.startsWith(start)) {
-                current_res.push(terms[k])
+                if (terms[k] != '.*') {
+                    current_res.push(terms[k])
+                }
             }
         } else if (k == field_name) {
-            current_res.push(terms[k])
+            if (terms[k] != '.*') {
+                current_res.push(terms[k])
+            }
         }
     })
     re = current_res.join('|');
