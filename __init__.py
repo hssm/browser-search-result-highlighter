@@ -8,6 +8,7 @@ from aqt import gui_hooks
 from aqt.browser import SearchContext
 from aqt.editor import Editor, EditorMode
 from aqt.webview import WebContent
+import base64
 
 from .utils.parser import parse_search
 
@@ -43,11 +44,9 @@ class BrowserSearchResultHighlighter:
 
     def editor_did_load_note(self, editor, focusTo=None) -> None:
         if editor.editorMode is EditorMode.BROWSER:
-            # TODO: is there a better way to escape everything?
-            terms = json.dumps(bsrh.filter_terms)
-            terms = terms.replace("'", r"\'")
-            terms = terms.replace("\\\\", r"\\\\")
-            editor.web.eval(f"terms_str = '{terms}'")
+            as_str = json.dumps(bsrh.filter_terms)
+            as_b64 = base64.b64encode((as_str.encode())).decode()
+            editor.web.eval(f"terms_str = '{as_b64}'")
             editor.web.eval(f"parseTerms()")
             editor.web.eval("beginHighlighter()")
 

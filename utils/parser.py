@@ -130,7 +130,6 @@ def extract_searchable_terms(terms):
     return extracted
 
 def replace_special(term):
-    # Replace anki wildcards
     if '_' in term:
         index = term.index('_')
         if index == 0 or term[index - 1] != '\\':
@@ -142,15 +141,13 @@ def replace_special(term):
     if '\\:' in term:
         term = term.replace('\\:', ':')
 
-    # Escape regex special chars
-    #term = re.escape(term)
+    term = re.escape(term)
 
-    if '(' in term:
-        term = term.replace('(', '\\(')
-    if ')' in term:
-        term = term.replace(')', '\\)')
-    if '|' in term:
-        term = term.replace('|', '\\|')
+    if '\\\\' in term:
+        term = term.replace('\\\\', '\\')
+
+    term = term.replace('\\.', '.')
+    term = term.replace('\\*', '*')
 
     return term
 

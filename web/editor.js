@@ -81,7 +81,7 @@ function updateControls() {
 
 // Build regexes from the string given to us by python
 function parseTerms() {
-  terms = JSON.parse(terms_str);
+  terms = JSON.parse(atob(terms_str));
 }
 
 // Do initial work after note loads.
@@ -145,7 +145,7 @@ function highlightField(container) {
                 }
             }
         } else if (k == field_name) {
-            if (terms[k] != '.*') {
+            if (terms[k].length && terms[k] != '.*') {
                 current_res.push(terms[k])
             }
         }
