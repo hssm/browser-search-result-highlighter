@@ -184,6 +184,9 @@ function highlightField(container) {
                 });
                 r.owner = container;
                 CSS.highlights.get('match').add(r);
+                if (!scroll_to) {
+                    scroll_to = node.parentNode;
+                }
             });
         } else {
             node.childNodes.forEach(n => highlightInChildren(n))
@@ -217,6 +220,7 @@ function highlightField(container) {
         code_mirror.addEventListener('focus', codeOnFocus);
         code_mirror.addEventListener('blur', codeOnBlur);
     }
+    // Try this again in case the match is inside code mirror
     if (!scroll_to) {
         scroll_to = container;
     }
