@@ -123,6 +123,8 @@ def extract_searchable_terms(terms):
                 if len(main) > 1 and main[0] == '"' and main[-1] == '"':
                     main = main[1:-1]
                 extracted.append({'tag': 'boundary', 'term': main})
+            elif prefix == 're':
+                extracted.append({'tag': 'regex', 'term': main})
             else:
                 extracted.append({'tag': 'field', 'field_name': prefix, 'term': extract_searchable_terms([main])})
         else:
@@ -152,24 +154,31 @@ def replace_special(term):
     return term
 
 
-def build_regex_from_terms(terms, specials=True):
+def build_regex_from_terms(terms):
     parts = []
     fields = {}
+    specials = True
     for node in terms:
         if isinstance(node['term'], list):
-            node['term'] = build_regex_from_terms(node['term'], False)['']
+            node['term'] = build_regex_from_terms(node['term'])['']
+            # Already handled from above call. Avoid doing it again
+            specials = False
 
-        if specials:
+        if specials and node['tag'] != 'regex':
             node['term'] = replace_special(node['term'])
         if node['tag'] == 'normal':
             parts.append(node['term'])
         if node['tag'] == 'boundary':
             parts.append(r'\b' + node['term'] + r'\b')
-        if node['tag'] == 'quoted':  # TODO: isn't this just normal?
+        if node['tag'] == 'quoted':
+            # TODO: not clear yet if we need to do something different for this
             parts.append(node['term'])
         if node['tag'] == 'field':
             fparts = fields.setdefault(node['field_name'], [])
             fparts.append(node['term'])
+        if node['tag'] == 'regex':
+            parts.append(node['term'])
+
 
     out = {'': "|".join(parts)}
     for fname, fparts in fields.items():
@@ -180,25 +189,10 @@ def build_regex_from_terms(terms, specials=True):
 ignore = ['tag', 'deck', 'preset', 'card', 'is', 'flag', 'prop', 'added', 'edited', 'rated', 'introduced', 'nid', 'cid']
 
 if __name__ == "__main__":
-    search = ('dog (cat or mouse) (fish (house or land) -bike) w:fish w:fish* w:"and also" "many fish" "some th_ng" front:*dog* '
-              'back:(cat or mouse -dog) w:3:30 3\\:30 "(text)"')
+    search = '"Third:re:feed (cat|dog) .* morning"'
     nodes = parse_nodes(search)
+    print(nodes)
     terms = extract_searchable_terms(nodes)
+    print(terms)
     regex = build_regex_from_terms(terms)
     print(regex)
-
-    # for search in [
-    #     "dog", "dog cat", "dog or cat", "dog (cat or mouse)", "-cat", "-cat -mouse", 'cat "and" mouse',
-    #     "-(cat or mouse)", "d_g", "d*g", "w:dog", "w:dog*", "w:d_g", "w:*dog", 'w:"and also"', 'nc:"and also"',
-    #     "front:dog", "front:*dog*", "front:",
-    #     "front:_*", "front:*", "fr*:text", "back:(cat or mouse -dog)", '"animal front:a dog"', '"a dog"', '-"a dog"',
-    #
-    #     # My tests
-    #     "d\\g", "_og", "*og", "do_", "do*", "_do\\", '\\"dog\\"', "\\dog\\", '"(text)"', '\\(text\\)', '"\\(text\\)"',
-    #     "w:3:30", "3\\:30",
-    # ]:
-    #     # search = '"(text)"'
-    #     nodes = parse_nodes(search)
-    #     terms = extract_searchable_terms(nodes)
-    #     regex = build_regex_from_terms(terms)
-    #     print(nodes, "\t | \t", terms)
