@@ -150,7 +150,9 @@ def replace_special(term):
 
     term = term.replace('\\.', '.')
     term = term.replace('\\*', '*')
-
+    term = term.replace('\\&amp;', '\&')
+    term = term.replace('\\&lt;', '<')
+    term = term.replace('\\&gt;', '>')
     return term
 
 
