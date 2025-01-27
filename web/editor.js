@@ -60,6 +60,8 @@ let controls =
 </span>
 `
 
+let minimap = `<div id="match-minimap"></div>`;
+
 function addControls(auto) {
     // First load has a race condition. Keep trying until toolbar appears.
     let toolbar = document.querySelector('div[role="toolbar"]');
@@ -72,6 +74,9 @@ function addControls(auto) {
     checkbox.addEventListener('change', onAuto);
     auto_scroll = auto;
     checkbox.checked = auto;
+
+    let scrollarea = document.querySelector('.scroll-area-relative');
+    scrollarea.insertAdjacentHTML("beforeend", minimap);
 }
 
 function updateControls() {
@@ -92,11 +97,14 @@ function beginHighlighter() {
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
+    let minimap = document.querySelector('#match-minimap');
+    let scrollarea = document.querySelector('.scroll-area-relative .flex-column');
     let containers = document.querySelectorAll('.field-container');
-    containers.forEach((c) => { unhighlightCodeExpander(c); })
     if (containers.length == 0) {
       return;
     }
+    containers.forEach((c) => { unhighlightCodeExpander(c); })
+    minimap.innerHTML = '';
 
     // No work to do if no search terms
     if (terms.length == 0) {
@@ -170,6 +178,9 @@ function highlightField(container) {
     // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
     // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
 
+    let minimap = document.getElementById("match-minimap");
+    let scrollarea = document.querySelector('.scroll-area-relative .flex-column');
+
     let highlightCount = 0;
     function highlightInChildren(node) {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -187,6 +198,19 @@ function highlightField(container) {
                 if (!scroll_to) {
                     scroll_to = node.parentNode;
                 }
+                // Add minimap notch at element height within container
+                let notch = document.createElement('div');
+                notch.setAttribute('class', 'match-position');
+
+                let range = document.createRange();
+                range.selectNodeContents(node);
+                let rect = range.getClientRects()[0];
+                let mid = rect.height / 2;
+                let pos = ((rect.top+mid) / scrollarea.scrollHeight) * 100;
+                // Cap min/max because they might be hard to see at the extremes
+                pos = Math.min(99.6, Math.max(0.4, pos));
+                notch.style.top = pos +"%";
+                minimap.append(notch);
             });
         } else {
             node.childNodes.forEach(n => highlightInChildren(n))

@@ -39,3 +39,27 @@
   outline: 2px dashed #fff068;
   background: unset;
 }
+
+
+#match-minimap {
+  display: flex;
+  width: 12px;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: transparent;
+  pointer-events: none;
+  z-index: 100;
+  background: #ce25254d;
+}
+
+.match-position {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: #c5b204;
+  pointer-events: all;
+  cursor: pointer;
+}
+
