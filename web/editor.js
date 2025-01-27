@@ -179,7 +179,12 @@ function highlightField(container) {
     // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
 
     let minimap = document.getElementById("match-minimap");
-    let scrollarea = document.querySelector('.scroll-area-relative .flex-column');
+    let scrollarea = document.querySelector('.scroll-area');
+    let fieldarea = document.querySelector('.scroll-area .fields');
+    let max_y = fieldarea.scrollHeight;
+    if (fieldarea.scrollHeight < scrollarea.clientHeight) {
+      max_y = scrollarea.clientHeight;
+    }
 
     let highlightCount = 0;
     function highlightInChildren(node) {
@@ -205,8 +210,7 @@ function highlightField(container) {
                 let range = document.createRange();
                 range.selectNodeContents(node);
                 let rect = range.getClientRects()[0];
-                let mid = rect.height / 2;
-                let pos = ((rect.top+mid) / scrollarea.scrollHeight) * 100;
+                let pos = ((rect.top-25) / max_y) * 100;
                 // Cap min/max because they might be hard to see at the extremes
                 pos = Math.min(99.6, Math.max(0.4, pos));
                 notch.style.top = pos +"%";
