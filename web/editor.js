@@ -181,9 +181,12 @@ function highlightField(container) {
     let minimap = document.getElementById("match-minimap");
     let scrollarea = document.querySelector('.scroll-area');
     let fieldarea = document.querySelector('.scroll-area .fields');
+    let toolbar = document.querySelector('.editor-toolbar');
     let max_y = fieldarea.scrollHeight;
     if (fieldarea.scrollHeight < scrollarea.clientHeight) {
-      max_y = scrollarea.clientHeight;
+        max_y = scrollarea.clientHeight;
+        console.log("Scrollarea height: " + max_y);
+        console.log('minimap height: ' + minimap.clientHeight);
     }
 
     let highlightCount = 0;
@@ -204,13 +207,16 @@ function highlightField(container) {
                     scroll_to = node.parentNode;
                 }
                 // Add minimap notch at element height within container
+                let scrollarea = document.querySelector('.scroll-area');
                 let notch = document.createElement('div');
                 notch.setAttribute('class', 'match-position');
-
                 let range = document.createRange();
                 range.selectNodeContents(node);
                 let rect = range.getClientRects()[0];
-                let pos = ((rect.top-25) / max_y) * 100;
+                console.log("Rect top: " + rect.top);
+                let toolbar = document.querySelector('.editor-toolbar').clientHeight+1;
+                let fromtop = scrollarea.scrollTop + rect.top + (rect.height / 2);
+                let pos = ((fromtop-toolbar) / max_y) * 100;
                 // Cap min/max because they might be hard to see at the extremes
                 pos = Math.min(99.6, Math.max(0.4, pos));
                 notch.style.top = pos +"%";
