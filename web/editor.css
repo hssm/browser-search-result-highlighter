@@ -48,18 +48,18 @@
   position: absolute;
   right: 0;
   top: 0;
-  background: transparent;
   pointer-events: none;
   z-index: 100;
-  background: #ce25254d;
 }
 
 .match-position {
   position: absolute;
   width: 100%;
   height: 2px;
-  background-color: #c5b204;
-  pointer-events: all;
-  cursor: pointer;
+  background-color: #b79800;
 }
 
+
+.night_mode .match-position {
+  background-color: #c5b204;
+}
