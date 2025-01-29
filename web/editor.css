@@ -40,7 +40,6 @@
   background: unset;
 }
 
-
 #match-minimap {
   display: flex;
   width: 12px;
@@ -58,8 +57,10 @@
   height: 2px;
   background-color: #b79800;
 }
-
-
 .night_mode .match-position {
   background-color: #c5b204;
+}
+
+.scroll-area[highlighting=true] {
+  scrollbar-gutter: stable
 }

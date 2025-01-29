@@ -95,6 +95,7 @@ function beginHighlighter() {
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
+    document.querySelector('.scroll-area').setAttribute('highlighting', false);
     let containers = document.querySelectorAll('.field-container');
     if (containers.length == 0) {
       return;
@@ -268,6 +269,8 @@ function highlightField(container) {
     if (!scroll_to) {
         scroll_to = container;
     }
+    // Add an attribute for styling scrollbar when we have matches
+    scrollarea.setAttribute('highlighting', true);
 }
 
 function unhighlightField(container) {
