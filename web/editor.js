@@ -174,10 +174,6 @@ function highlightField(container) {
         code_mirror = null;
     }
 
-    // Note on counting matches: We count the matches on the text nodes in the field instead of the whole field's
-    // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
-    // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
-
     let minimap = document.getElementById("match-minimap");
     let scrollarea = document.querySelector('.scroll-area');
     let fieldarea = document.querySelector('.scroll-area .fields');
@@ -185,9 +181,26 @@ function highlightField(container) {
     let max_y = fieldarea.scrollHeight;
     if (fieldarea.scrollHeight < scrollarea.clientHeight) {
         max_y = scrollarea.clientHeight;
-        console.log("Scrollarea height: " + max_y);
-        console.log('minimap height: ' + minimap.clientHeight);
     }
+
+    function addMinimapNotch(target) {
+        let notch = document.createElement('div');
+        notch.setAttribute('class', 'match-position');
+        let range = document.createRange();
+        range.selectNodeContents(target);
+        let rect = range.getClientRects()[0];
+        let tb = toolbar.clientHeight+1;
+        let fromtop = scrollarea.scrollTop + rect.top + (rect.height / 2);
+        let pos = ((fromtop-tb) / max_y) * 100;
+        // Cap min/max because they might be hard to see at the extremes
+        pos = Math.min(99.6, Math.max(0.4, pos));
+        notch.style.top = pos +"%";
+        minimap.append(notch);
+    }
+
+    // Note on counting matches: We count the matches on the text nodes in the field instead of the whole field's
+    // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
+    // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
 
     let highlightCount = 0;
     function highlightInChildren(node) {
@@ -207,20 +220,7 @@ function highlightField(container) {
                     scroll_to = node.parentNode;
                 }
                 // Add minimap notch at element height within container
-                let scrollarea = document.querySelector('.scroll-area');
-                let notch = document.createElement('div');
-                notch.setAttribute('class', 'match-position');
-                let range = document.createRange();
-                range.selectNodeContents(node);
-                let rect = range.getClientRects()[0];
-                console.log("Rect top: " + rect.top);
-                let toolbar = document.querySelector('.editor-toolbar').clientHeight+1;
-                let fromtop = scrollarea.scrollTop + rect.top + (rect.height / 2);
-                let pos = ((fromtop-toolbar) / max_y) * 100;
-                // Cap min/max because they might be hard to see at the extremes
-                pos = Math.min(99.6, Math.max(0.4, pos));
-                notch.style.top = pos +"%";
-                minimap.append(notch);
+                addMinimapNotch(node);
             });
         } else {
             node.childNodes.forEach(n => highlightInChildren(n))
@@ -245,6 +245,9 @@ function highlightField(container) {
     // There are matches not visible to the user but are inside code. Highlight code button to inform.
     if (match_count_code > match_count_editable) {
         highlightCodeExpander(container);
+        // There is NO reason for this to work correctly, but it does.
+        // Lines up perfectly. Will not investigate.
+        addMinimapNotch(container);
     }
 
     editable.addEventListener('focus', editableOnFocus); // TODO: remove stale listeners?
