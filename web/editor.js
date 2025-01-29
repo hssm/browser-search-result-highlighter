@@ -60,8 +60,6 @@ let controls =
 </span>
 `
 
-let minimap = `<div id="match-minimap"></div>`;
-
 function addControls(auto) {
     // First load has a race condition. Keep trying until toolbar appears.
     let toolbar = document.querySelector('div[role="toolbar"]');
@@ -76,7 +74,7 @@ function addControls(auto) {
     checkbox.checked = auto;
 
     let scrollarea = document.querySelector('.scroll-area-relative');
-    scrollarea.insertAdjacentHTML("beforeend", minimap);
+    scrollarea.insertAdjacentHTML("beforeend", `<div id="match-minimap"></div>`);
 }
 
 function updateControls() {
@@ -97,14 +95,12 @@ function beginHighlighter() {
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
-    let minimap = document.querySelector('#match-minimap');
-    let scrollarea = document.querySelector('.scroll-area-relative .flex-column');
     let containers = document.querySelectorAll('.field-container');
     if (containers.length == 0) {
       return;
     }
     containers.forEach((c) => { unhighlightCodeExpander(c); })
-    minimap.innerHTML = '';
+    document.querySelector('#match-minimap').innerHTML = '';
 
     // No work to do if no search terms
     if (terms.length == 0) {
@@ -125,12 +121,12 @@ function beginHighlighter() {
       observer.observe(c, {childList: true, subtree: true});
     })
 
-    // Set UI
+    // Update UI after matching done
     updateControls();
 
     if (auto_scroll && scroll_to) {
         // There's odd behaviour on the first load of a note type and when there's
-        // an image loading. Scrolling on the next loop gets the correct position.
+        // an image loading. Scrolling on the next cycle gets the correct position.
         setTimeout(() => { scroll_to.scrollIntoViewIfNeeded(); }, 0)
     }
 }
@@ -178,18 +174,29 @@ function highlightField(container) {
     let scrollarea = document.querySelector('.scroll-area');
     let fieldarea = document.querySelector('.scroll-area .fields');
     let toolbar = document.querySelector('.editor-toolbar');
+
+    // If the field area is too small to generate a scroll bar, we cap the height of the minimap in the
+    // positioning calculation to match it. This gives us precise notch positioning when there's no scrolling.
     let max_y = fieldarea.scrollHeight;
     if (fieldarea.scrollHeight < scrollarea.clientHeight) {
         max_y = scrollarea.clientHeight;
     }
 
     function addMinimapNotch(target) {
+        // To get the correct position, we have to take into account how much the user has scrolled down
+        // and how much the toolbar is pushing the content down. I do not understand why all this is required
+        // instead of getting the correct position from getClientRects(). Nevertheless, through trial and error,
+        // I found this combination of additions and subtractions resolves the precise coordinates of the
+        // highlighted range.
+        // TODO: The position is not perfect if the text node spans multiple lines. Why? We are highlighting
+        // a range within the text node -- are the "clientRects" of the text node instead of the selection?
+
         let notch = document.createElement('div');
         notch.setAttribute('class', 'match-position');
         let range = document.createRange();
         range.selectNodeContents(target);
         let rect = range.getClientRects()[0];
-        let tb = toolbar.clientHeight+1;
+        let tb = toolbar.clientHeight+1; // The +1 is for some kind of margin? Lines up better with it present.
         let fromtop = scrollarea.scrollTop + rect.top + (rect.height / 2);
         let pos = ((fromtop-tb) / max_y) * 100;
         // Cap min/max because they might be hard to see at the extremes
