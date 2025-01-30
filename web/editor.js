@@ -20,9 +20,6 @@ let matched_total = 0;
 // Number of fields with matches
 let matched_fields = 0;
 
-
-let matched_nodes = new Map();
-
 const matchCount = (str, re) => {
   return str?.match(re)?.length ?? 0;
 };
@@ -112,7 +109,6 @@ function beginHighlighter() {
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
-    matched_nodes = new Map();
     let containers = document.querySelectorAll('.field-container');
     if (containers.length == 0) {
       return;
@@ -209,7 +205,6 @@ function highlightField(container) {
                 if (!scroll_to) {
                     scroll_to = node.parentNode;
                 }
-                matched_nodes.set(node, node);
             });
         } else {
             node.childNodes.forEach(n => highlightInChildren(n))
@@ -234,10 +229,6 @@ function highlightField(container) {
     // There are matches not visible to the user but are inside code. Highlight code button to inform.
     if (match_count_code > match_count_editable) {
         highlightCodeExpander(container);
-
-        // There is NO reason for this to work correctly, but it does.
-        // Lines up perfectly. Will not investigate.
-        matched_nodes.set(container, container);
     }
 
     editable.addEventListener('focus', editableOnFocus); // TODO: remove stale listeners?
@@ -277,19 +268,20 @@ function fillMinimap() {
         max_y = scrollarea.clientHeight;
     }
 
-    matched_nodes.forEach(target => {
+    CSS.highlights.get('match').forEach(hl => {
         // To get the correct position, we have to take into account how much the user has scrolled down
         // and how much the toolbar is pushing the content down. I do not understand why all this is required
         // instead of getting the correct position from getClientRects(). Nevertheless, through trial and error,
         // I found this combination of additions and subtractions resolves the precise coordinates of the
         // highlighted range.
-        // TODO: The position is not perfect if the text node spans multiple lines. Why? We are highlighting
-        // a range within the text node -- are the "clientRects" of the text node instead of the selection?
 
         let notch = document.createElement('div');
         notch.setAttribute('class', 'match-position');
         let range = document.createRange();
-        range.selectNodeContents(target);
+
+        range.setStart(hl.startContainer, hl.startOffset);
+        range.setEnd(hl.endContainer, hl.endOffset);
+
         let rect = range.getClientRects()[0];
         if (rect == null) {
             // The observer fires while note is changing. Ignore these.
