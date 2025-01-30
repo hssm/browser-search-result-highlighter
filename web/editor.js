@@ -20,6 +20,9 @@ let matched_total = 0;
 // Number of fields with matches
 let matched_fields = 0;
 
+
+let matched_nodes = new Map();
+
 const matchCount = (str, re) => {
   return str?.match(re)?.length ?? 0;
 };
@@ -48,6 +51,13 @@ const watch = (mutations, observer) => {
 }
 let observers = [];
 
+// Observer to detect field area size changes to re-calculate minimap positions
+const resizeObserver = new ResizeObserver(entries => {
+  for (let entry of entries) {
+    fillMinimap();
+  }
+});
+
 // UI controls
 let controls =
 `
@@ -73,13 +83,20 @@ function addControls(auto) {
     auto_scroll = auto;
     checkbox.checked = auto;
 
+    // Add the minimap
     let scrollarea = document.querySelector('.scroll-area-relative');
     scrollarea.insertAdjacentHTML("beforeend", `<div id="match-minimap"></div>`);
+
+    // Add observers to recalculate minimap positions on height changes
+    let fieldarea = document.querySelector('.scroll-area .fields');
+    resizeObserver.observe(fieldarea);
+    resizeObserver.observe(scrollarea);
 }
 
 function updateControls() {
     document.getElementById('bsrh-mtotal').innerHTML = matched_total;
     document.getElementById('bsrh-mfields').innerHTML = matched_fields;
+    document.querySelector('.scroll-area').setAttribute('highlighting', matched_total > 0);
 }
 
 // Build regexes from the string given to us by python
@@ -95,7 +112,7 @@ function beginHighlighter() {
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
-    document.querySelector('.scroll-area').setAttribute('highlighting', false);
+    matched_nodes = new Map();
     let containers = document.querySelectorAll('.field-container');
     if (containers.length == 0) {
       return;
@@ -124,7 +141,7 @@ function beginHighlighter() {
 
     // Update UI after matching done
     updateControls();
-
+    fillMinimap();
     if (auto_scroll && scroll_to) {
         // There's odd behaviour on the first load of a note type and when there's
         // an image loading. Scrolling on the next cycle gets the correct position.
@@ -171,41 +188,6 @@ function highlightField(container) {
         code_mirror = null;
     }
 
-    let minimap = document.getElementById("match-minimap");
-    let scrollarea = document.querySelector('.scroll-area');
-    let fieldarea = document.querySelector('.scroll-area .fields');
-    let toolbar = document.querySelector('.editor-toolbar');
-
-    // If the field area is too small to generate a scroll bar, we cap the height of the minimap in the
-    // positioning calculation to match it. This gives us precise notch positioning when there's no scrolling.
-    let max_y = fieldarea.scrollHeight;
-    if (fieldarea.scrollHeight < scrollarea.clientHeight) {
-        max_y = scrollarea.clientHeight;
-    }
-
-    function addMinimapNotch(target) {
-        // To get the correct position, we have to take into account how much the user has scrolled down
-        // and how much the toolbar is pushing the content down. I do not understand why all this is required
-        // instead of getting the correct position from getClientRects(). Nevertheless, through trial and error,
-        // I found this combination of additions and subtractions resolves the precise coordinates of the
-        // highlighted range.
-        // TODO: The position is not perfect if the text node spans multiple lines. Why? We are highlighting
-        // a range within the text node -- are the "clientRects" of the text node instead of the selection?
-
-        let notch = document.createElement('div');
-        notch.setAttribute('class', 'match-position');
-        let range = document.createRange();
-        range.selectNodeContents(target);
-        let rect = range.getClientRects()[0];
-        let tb = toolbar.clientHeight+1; // The +1 is for some kind of margin? Lines up better with it present.
-        let fromtop = scrollarea.scrollTop + rect.top + (rect.height / 2);
-        let pos = ((fromtop-tb) / max_y) * 100;
-        // Cap min/max because they might be hard to see at the extremes
-        pos = Math.min(99.6, Math.max(0.4, pos));
-        notch.style.top = pos +"%";
-        minimap.append(notch);
-    }
-
     // Note on counting matches: We count the matches on the text nodes in the field instead of the whole field's
     // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
     // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
@@ -227,8 +209,7 @@ function highlightField(container) {
                 if (!scroll_to) {
                     scroll_to = node.parentNode;
                 }
-                // Add minimap notch at element height within container
-                addMinimapNotch(node);
+                matched_nodes.set(node, node);
             });
         } else {
             node.childNodes.forEach(n => highlightInChildren(n))
@@ -253,9 +234,10 @@ function highlightField(container) {
     // There are matches not visible to the user but are inside code. Highlight code button to inform.
     if (match_count_code > match_count_editable) {
         highlightCodeExpander(container);
+
         // There is NO reason for this to work correctly, but it does.
         // Lines up perfectly. Will not investigate.
-        addMinimapNotch(container);
+        matched_nodes.set(container, container);
     }
 
     editable.addEventListener('focus', editableOnFocus); // TODO: remove stale listeners?
@@ -270,7 +252,7 @@ function highlightField(container) {
         scroll_to = container;
     }
     // Add an attribute for styling scrollbar when we have matches
-    scrollarea.setAttribute('highlighting', true);
+    document.querySelector('.scroll-area').setAttribute('highlighting', true);
 }
 
 function unhighlightField(container) {
@@ -279,6 +261,49 @@ function unhighlightField(container) {
             CSS.highlights.get('match').delete(hl);
         }
     })
+}
+
+function fillMinimap() {
+    let minimap = document.getElementById("match-minimap");
+    let scrollarea = document.querySelector('.scroll-area');
+    let fieldarea = document.querySelector('.scroll-area .fields');
+    let toolbar = document.querySelector('.editor-toolbar');
+    minimap.innerHTML = '';
+
+    // If the field area is too small to generate a scroll bar, we cap the height of the minimap in the
+    // positioning calculation to match it. This gives us precise notch positioning when there's no scrolling.
+    let max_y = fieldarea.scrollHeight;
+    if (fieldarea.scrollHeight < scrollarea.clientHeight) {
+        max_y = scrollarea.clientHeight;
+    }
+
+    matched_nodes.forEach(target => {
+        // To get the correct position, we have to take into account how much the user has scrolled down
+        // and how much the toolbar is pushing the content down. I do not understand why all this is required
+        // instead of getting the correct position from getClientRects(). Nevertheless, through trial and error,
+        // I found this combination of additions and subtractions resolves the precise coordinates of the
+        // highlighted range.
+        // TODO: The position is not perfect if the text node spans multiple lines. Why? We are highlighting
+        // a range within the text node -- are the "clientRects" of the text node instead of the selection?
+
+        let notch = document.createElement('div');
+        notch.setAttribute('class', 'match-position');
+        let range = document.createRange();
+        range.selectNodeContents(target);
+        let rect = range.getClientRects()[0];
+        if (rect == null) {
+            // The observer fires while note is changing. Ignore these.
+            return
+        }
+
+        let tb = toolbar.clientHeight+1; // The +1 is for some kind of margin? Lines up better with it present.
+        let fromtop = scrollarea.scrollTop + rect.top + (rect.height / 2);
+        let pos = ((fromtop-tb) / max_y) * 100;
+        // Cap min/max because they might be hard to see at the extremes
+        pos = Math.min(99.6, Math.max(0.4, pos));
+        notch.style.top = pos +"%";
+        minimap.append(notch);
+    });
 }
 
 function editableOnFocus(event) {
