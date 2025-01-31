@@ -54,7 +54,7 @@ const resizeObserver = new ResizeObserver(entries => {
     fillMinimap();
 
     if (auto_scroll && scroll_to) {
-        scroll_to.scrollIntoViewIfNeeded(true);
+        scrollToMatch();
     }
   }
 });
@@ -144,7 +144,7 @@ function beginHighlighter() {
     fillMinimap();
     if (auto_scroll && scroll_to) {
         // Here's how this is going to work. We scroll to the element immediately.
-        scroll_to.scrollIntoViewIfNeeded(true);
+        scrollToMatch();
 
         // But the editor contents shift and shuffle for all sorts of reasons, so it may not land
         // on the correct element after all. To solve this, we *keep* scrolling to this element
@@ -211,7 +211,7 @@ function highlightField(container) {
                 r.owner = container;
                 CSS.highlights.get('match').add(r);
                 if (scroll_to === null) {
-                    scroll_to = node.parentNode;
+                    scroll_to = r;
                 }
             });
         } else {
@@ -247,7 +247,7 @@ function highlightField(container) {
         code_mirror.addEventListener('blur', codeOnBlur);
     }
     // Try this again in case the match is inside code mirror
-    if (!scroll_to) {
+    if (scroll_to === null) {
         scroll_to = container;
     }
     // Add an attribute for styling scrollbar when we have matches
@@ -277,7 +277,7 @@ function fillMinimap() {
     }
 
 
-    function addNotch(target, isElement=false) {
+    function addNotch(target) {
         // To get the correct position, we have to take into account how much the user has scrolled down
         // and how much the toolbar is pushing the content down. I do not understand why all this is required
         // instead of getting the correct position from getClientRects(). Nevertheless, through trial and error,
@@ -288,15 +288,14 @@ function fillMinimap() {
         notch.setAttribute('class', 'match-position');
         let range = document.createRange();
 
-        if (isElement) {
-          // Is a code button. Can select whole thing.
-          range.selectNodeContents(target);
-        } else {
+        if (target instanceof StaticRange) {
           // Is a highlighter entry. We have exact range.
           range.setStart(target.startContainer, target.startOffset);
           range.setEnd(target.endContainer, target.endOffset);
+        } else {
+          // Is a code button. Can select whole thing.
+          range.selectNodeContents(target);
         }
-
 
         let rect = range.getClientRects()[0];
         if (rect == null) {
@@ -314,7 +313,7 @@ function fillMinimap() {
     }
     CSS.highlights.get('match').forEach(hl => addNotch(hl));
     document.querySelectorAll(".field-container[bsrh-moreincode=true").forEach(container => {
-      addNotch(container.querySelector('.plain-text-badge button > span'), true);
+      addNotch(container.querySelector('.plain-text-badge button > span'));
     });
 }
 
@@ -362,4 +361,34 @@ function unhighlightCodeExpander(container) {
 function onAuto(event) {
   auto_scroll = event.target.checked;
   pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
+}
+
+function scrollToMatch() {
+    let target = scroll_to;
+    // The positioning code resembles the minimap notch positioning, but tweaked
+    // to center after the position is found and without the percentage.
+
+    let scrollarea = document.querySelector('.scroll-area');
+    let fieldarea = document.querySelector('.scroll-area .fields');
+    let toolbar = document.querySelector('.editor-toolbar');
+
+    let max_y = fieldarea.scrollHeight;
+    if (fieldarea.scrollHeight < scrollarea.clientHeight) {
+        return;
+    }
+
+    let range = document.createRange();
+    if (target instanceof StaticRange) {
+      range.setStart(target.startContainer, target.startOffset);
+      range.setEnd(target.endContainer, target.endOffset);
+    } else {
+      range.selectNodeContents(target);
+    }
+    let rect = range.getClientRects()[0];
+    if (rect == null) {return}
+    let tb = toolbar.clientHeight+1;
+    let fromtop = scrollarea.scrollTop + rect.top + (rect.height / 2);
+    let pos = fromtop-tb;
+    let centerd = pos - (scrollarea.clientHeight / 2);
+    scrollarea.scrollTo(0, centerd);
 }
