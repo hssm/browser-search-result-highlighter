@@ -268,7 +268,8 @@ function fillMinimap() {
         max_y = scrollarea.clientHeight;
     }
 
-    CSS.highlights.get('match').forEach(hl => {
+
+    function addNotch(target, isElement=false) {
         // To get the correct position, we have to take into account how much the user has scrolled down
         // and how much the toolbar is pushing the content down. I do not understand why all this is required
         // instead of getting the correct position from getClientRects(). Nevertheless, through trial and error,
@@ -279,8 +280,15 @@ function fillMinimap() {
         notch.setAttribute('class', 'match-position');
         let range = document.createRange();
 
-        range.setStart(hl.startContainer, hl.startOffset);
-        range.setEnd(hl.endContainer, hl.endOffset);
+        if (isElement) {
+          // Is a code button. Can select whole thing.
+          range.selectNodeContents(target);
+        } else {
+          // Is a highlighter entry. We have exact range.
+          range.setStart(target.startContainer, target.startOffset);
+          range.setEnd(target.endContainer, target.endOffset);
+        }
+
 
         let rect = range.getClientRects()[0];
         if (rect == null) {
@@ -295,6 +303,10 @@ function fillMinimap() {
         pos = Math.min(99.6, Math.max(0.4, pos));
         notch.style.top = pos +"%";
         minimap.append(notch);
+    }
+    CSS.highlights.get('match').forEach(hl => addNotch(hl));
+    document.querySelectorAll(".field-container[bsrh-moreincode=true").forEach(container => {
+      addNotch(container.querySelector('.plain-text-badge button > span'), true);
     });
 }
 
@@ -315,7 +327,10 @@ function codeOnFocus(event) {
   let container = code_mirror.closest('.field-container');
   if (container.hasAttribute('bsrh-moreincode')) {
     // Seems to be a race condition? This makes it work
-    setTimeout(() => { highlightField(container) }, 0)
+    setTimeout(() => {
+      highlightField(container);
+      fillMinimap();
+    }, 0)
   } else {
     unhighlightField(container);
   }
