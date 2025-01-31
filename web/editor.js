@@ -52,6 +52,10 @@ let observers = [];
 const resizeObserver = new ResizeObserver(entries => {
   for (let entry of entries) {
     fillMinimap();
+
+    if (auto_scroll && scroll_to) {
+        scroll_to.scrollIntoViewIfNeeded(true);
+    }
   }
 });
 
@@ -139,9 +143,13 @@ function beginHighlighter() {
     updateControls();
     fillMinimap();
     if (auto_scroll && scroll_to) {
-        // There's odd behaviour on the first load of a note type and when there's
-        // an image loading. Scrolling on the next cycle gets the correct position.
-        setTimeout(() => { scroll_to.scrollIntoViewIfNeeded(); }, 0)
+        // Here's how this is going to work. We scroll to the element immediately.
+        scroll_to.scrollIntoViewIfNeeded(true);
+
+        // But the editor contents shift and shuffle for all sorts of reasons, so it may not land
+        // on the correct element after all. To solve this, we *keep* scrolling to this element
+        // on every resize in the resize observer, but only for the first 500mss.
+        setTimeout(() => { scroll_to = false; }, 500);
     }
 }
 
@@ -202,7 +210,7 @@ function highlightField(container) {
                 });
                 r.owner = container;
                 CSS.highlights.get('match').add(r);
-                if (!scroll_to) {
+                if (scroll_to === null) {
                     scroll_to = node.parentNode;
                 }
             });
