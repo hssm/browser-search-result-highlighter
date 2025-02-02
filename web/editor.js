@@ -110,6 +110,7 @@ function beginHighlighter() {
     // Clean slate when switching notes
     CSS.highlights.clear();
     CSS.highlights.set('match', new Highlight());
+    CSS.highlights.set('tag', new Highlight());
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
@@ -128,6 +129,9 @@ function beginHighlighter() {
 
     // Highlight all fields
     containers.forEach((c) => { highlightField(c); })
+
+    // Highlight tags
+    highlightTags();
 
     // Attach observers for the HTML editor (detect when it appears).
     // Clear out the old ones first.
@@ -157,22 +161,22 @@ function beginHighlighter() {
 function highlightField(container) {
     // Combine the regexes for field match and all match
     current_res = []
-    if (terms[''].length && terms[''] != '.*') {
-        current_res.push(terms['']);
+    if (terms['all'].length && terms['all'] != '.*') {
+        current_res.push(terms['all']);
     }
     field_name = container.querySelector('.label-name').textContent.toLowerCase();
-    Object.keys(terms).forEach(k => {
+    Object.keys(terms['fields']).forEach(k => {
         k = k.toLowerCase();
         if (k.endsWith('*')) {
             let start = k.substr(0, k.length-1);
             if (field_name.startsWith(start)) {
-                if (terms[k] != '.*') {
-                    current_res.push(terms[k])
+                if (terms['fields'][k] != '.*') {
+                    current_res.push(terms['fields'][k])
                 }
             }
         } else if (k == field_name) {
-            if (terms[k].length && terms[k] != '.*') {
-                current_res.push(terms[k])
+            if (terms['fields'][k].length && terms['fields'][k] != '.*') {
+                current_res.push(terms['fields'][k])
             }
         }
     })
@@ -219,6 +223,7 @@ function highlightField(container) {
         }
     }
     highlightInChildren(editable);
+
     let match_count_editable = highlightCount;
     let match_count_code = matchCount(editable.innerHTML, re);
 
@@ -355,6 +360,26 @@ function highlightCodeExpander(container) {
 
 function unhighlightCodeExpander(container) {
     container.removeAttribute('bsrh-moreincode');
+}
+
+function highlightTags() {
+    let buttons = document.querySelectorAll("button[data-addon-tag]");
+    terms['tags'].forEach(tag => {
+        let re = new RegExp(tag, "gi");
+        buttons.forEach(element => {
+            let tag_text = element.querySelector('span').childNodes[0];
+            let matches = [...tag_text.data.matchAll(re)];
+            matches.forEach((match) => {
+                let r = new StaticRange({
+                    'startContainer': tag_text,
+                    'endContainer': tag_text,
+                    'startOffset': match.index,
+                    'endOffset': match.index + match[0].length
+                });
+                CSS.highlights.get('tag').add(r);
+            });
+        });
+    });
 }
 
 // UI controls

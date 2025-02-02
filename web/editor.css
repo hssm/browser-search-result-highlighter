@@ -1,9 +1,9 @@
-::highlight(match) {
+::highlight(match), ::highlight(tag) {
   background-color: #ffe500;
   color: #121212;
 }
 
-.night_mode ::highlight(match) {
+.night_mode ::highlight(match), .night_mode ::highlight(tag) {
   background-color: #fff068;
   color: #121212;
 }

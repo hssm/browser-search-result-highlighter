@@ -125,6 +125,8 @@ def extract_searchable_terms(terms):
                 extracted.append({'tag': 'boundary', 'term': main})
             elif prefix == 're':
                 extracted.append({'tag': 'regex', 'term': main})
+            elif prefix == 'tag':
+                extracted.append({'tag': 'tag', 'term': main})
             else:
                 extracted.append({'tag': 'field', 'field_name': prefix, 'term': extract_searchable_terms([main])})
         else:
@@ -150,7 +152,7 @@ def replace_special(term):
 
     term = term.replace('\\.', '.')
     term = term.replace('\\*', '*')
-    term = term.replace('\\&amp;', '\&')
+    term = term.replace('\\&amp;', r'\&')
     term = term.replace('\\&lt;', '<')
     term = term.replace('\\&gt;', '>')
     return term
@@ -159,10 +161,11 @@ def replace_special(term):
 def build_regex_from_terms(terms):
     parts = []
     fields = {}
+    tags = []
     specials = True
     for node in terms:
         if isinstance(node['term'], list):
-            node['term'] = build_regex_from_terms(node['term'])['']
+            node['term'] = build_regex_from_terms(node['term'])['all']
             # Already handled from above call. Avoid doing it again
             specials = False
 
@@ -180,18 +183,26 @@ def build_regex_from_terms(terms):
             fparts.append(node['term'])
         if node['tag'] == 'regex':
             parts.append(node['term'])
+        if node['tag'] == 'tag':
+            tags.append(node['term'])
 
 
-    out = {'': "|".join(parts)}
+    out = {
+        'all': "|".join(parts),
+        'fields': {},
+        'tags': ''
+    }
     for fname, fparts in fields.items():
-        out[fname] = "|".join(fparts)
+        out['fields'][fname] = "|".join(fparts)
+    if tags:
+        out['tags'] = tags
 
     return out
 
-ignore = ['tag', 'deck', 'preset', 'card', 'is', 'flag', 'prop', 'added', 'edited', 'rated', 'introduced', 'nid', 'cid']
+ignore = ['deck', 'preset', 'card', 'is', 'flag', 'prop', 'added', 'edited', 'rated', 'introduced', 'nid', 'cid']
 
 if __name__ == "__main__":
-    search = '"Third:re:feed (cat|dog) .* morning"'
+    search = '"Third:re:feed (cat|dog) .* morning" tag:animal'
     nodes = parse_nodes(search)
     print(nodes)
     terms = extract_searchable_terms(nodes)
