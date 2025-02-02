@@ -126,7 +126,11 @@ def extract_searchable_terms(terms):
             elif prefix == 're':
                 extracted.append({'tag': 'regex', 'term': main})
             elif prefix == 'tag':
-                extracted.append({'tag': 'tag', 'term': main})
+                if main.startswith('re:'):
+                    main = main[3:]
+                    extracted.append({'tag': 'tag', 'regex': True, 'term': main})
+                else:
+                    extracted.append({'tag': 'tag', 'regex': False, 'term': main})
             else:
                 extracted.append({'tag': 'field', 'field_name': prefix, 'term': extract_searchable_terms([main])})
         else:
@@ -157,6 +161,12 @@ def replace_special(term):
     term = term.replace('\\&gt;', '>')
     return term
 
+def replace_special_tags(term, regex=False):
+    if not regex:
+        term = term.replace('*', '.*')
+    term = term.replace('::', '∷')
+    return term
+
 
 def build_regex_from_terms(terms):
     parts = []
@@ -169,7 +179,7 @@ def build_regex_from_terms(terms):
             # Already handled from above call. Avoid doing it again
             specials = False
 
-        if specials and node['tag'] != 'regex':
+        if specials and node['tag'] != 'regex' and node['tag'] != 'tag':
             node['term'] = replace_special(node['term'])
         if node['tag'] == 'normal':
             parts.append(node['term'])
@@ -184,8 +194,8 @@ def build_regex_from_terms(terms):
         if node['tag'] == 'regex':
             parts.append(node['term'])
         if node['tag'] == 'tag':
+            node['term'] = replace_special_tags(node['term'], node['regex'])
             tags.append(node['term'])
-
 
     out = {
         'all': "|".join(parts),
@@ -202,7 +212,7 @@ def build_regex_from_terms(terms):
 ignore = ['deck', 'preset', 'card', 'is', 'flag', 'prop', 'added', 'edited', 'rated', 'introduced', 'nid', 'cid']
 
 if __name__ == "__main__":
-    search = '"Third:re:feed (cat|dog) .* morning" tag:animal'
+    search = 'tag:animal::cat::lion tag:re:^parent$ tag:re:.*ani tag:anim*'
     nodes = parse_nodes(search)
     print(nodes)
     terms = extract_searchable_terms(nodes)
