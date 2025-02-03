@@ -20,6 +20,9 @@ let matched_total = 0;
 // Number of fields with matches
 let matched_fields = 0;
 
+// Number of tags with matches
+let matched_tags = 0;
+
 const matchCount = (str, re) => {
   return str?.match(re)?.length ?? 0;
 };
@@ -62,27 +65,44 @@ const resizeObserver = new ResizeObserver(entries => {
 // UI controls
 let controls =
 `
-<span id="bsrh-controls">
-    <input type="checkbox" id="bsrh-auto" name="bsrh-auto"/>
-    <label for="bsrh-auto">Auto Scroll</label>
-    <span id="bsrh-separator">|</span>
-    <span id="bsrh-mtotal">0</span> matches in
-    <span id="bsrh-mfields">0</span> fields
-</span>
+<div class="bsrh-controls">
+    <div class="left">
+        <span id="bsrh-total">0 Matches</span>
+        <span class="sub-total">
+          Fields: <span id="bsrh-nfields">0</span>
+          <span class="separator">|</span>
+          Tags: <span id="bsrh-ntags">0</span>
+        </span>
+    </div>
+
+    <div class="right">
+        <span class="checkbox">
+            <input type="checkbox" id="bsrh-auto" name="bsrh-auto"/>
+            <label for="bsrh-auto">Auto Scroll</label>
+        </span>
+        <span class="settings">
+            <button class="bsrh-settings"></button>
+        </span>
+    </div>
+</div>
 `
 
 function addControls(auto) {
     // First load has a race condition. Keep trying until toolbar appears.
-    let toolbar = document.querySelector('div[role="toolbar"]');
-    if (!toolbar) {
+    let editor = document.querySelector('.note-editor');
+    if (!editor) {
         setTimeout(() => {addControls(auto)}, 20)
         return;
     }
-    toolbar.insertAdjacentHTML("beforeend", controls);
-    let checkbox = toolbar.querySelector('#bsrh-auto');
+    editor.insertAdjacentHTML("beforeend", controls);
+    let checkbox = editor.querySelector('#bsrh-auto');
     checkbox.addEventListener('change', onAuto);
-    auto_scroll = auto;
     checkbox.checked = auto;
+    auto_scroll = auto;
+
+    // Steal the cog icon and shove it into our own settings button
+    let cog = document.getElementById('mdi-cog').cloneNode(true);
+    editor.querySelector('.bsrh-settings').append(cog);
 
     // Add the minimap
     let scrollarea = document.querySelector('.scroll-area-relative');
@@ -95,8 +115,18 @@ function addControls(auto) {
 }
 
 function updateControls() {
-    document.getElementById('bsrh-mtotal').innerHTML = matched_total;
-    document.getElementById('bsrh-mfields').innerHTML = matched_fields;
+    let total_text = '';
+    if (matched_total == 0) {
+        total_text = '0 Matches';
+    } else if (matched_total == 1) {
+        total_text = '1 Match';
+    } else {
+        total_text = matched_total + ' Matches';
+    }
+    document.getElementById('bsrh-main-total').innerHTML = total_text;
+    document.getElementById('bsrh-main-total').setAttribute('matched', matched_total > 0)
+    document.getElementById('bsrh-nfields').innerHTML = matched_fields;
+    document.getElementById('bsrh-ntags').innerHTML = matched_tags;
     document.querySelector('.scroll-area').setAttribute('highlighting', matched_total > 0);
 }
 
@@ -114,6 +144,7 @@ function beginHighlighter() {
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
+    matched_tags = 0;
     let containers = document.querySelectorAll('.field-container');
     if (containers.length == 0) {
       return;
@@ -377,6 +408,8 @@ function highlightTags() {
                     'endOffset': match.index + match[0].length
                 });
                 CSS.highlights.get('tag').add(r);
+                matched_tags++;
+                matched_total++;
             });
         });
     });

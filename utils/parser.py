@@ -200,7 +200,7 @@ def build_regex_from_terms(terms):
     out = {
         'all': "|".join(parts),
         'fields': {},
-        'tags': ''
+        'tags': []
     }
     for fname, fparts in fields.items():
         out['fields'][fname] = "|".join(fparts)

@@ -8,24 +8,42 @@
   color: #121212;
 }
 
-#bsrh-controls {
-  margin-left: auto;
-  margin-right: 8px;
+/* UI Controls */
+.bsrh-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+.bsrh-controls .left {
+  font-size: 14px;
+  margin-left: 5px;
+  font-family: monospace;
+}
+.bsrh-controls .sub-total {
+  color: #aaa;
+  font-size: 11px;
+}
+.bsrh-controls .separator {
+    color: #717171;
+    font-size: 10px;
+}
+.bsrh-controls .right {
   display: flex;
   align-items: center;
+  margin-right: 1px;
+}
+.bsrh-controls .checkbox {
+  margin-right: 4px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bsrh-controls .settings {
+  position: relative;
 }
 
-#bsrh-controls > * {
-  margin: 0 4px;
-}
-
-#bsrh-separator {
-  color: #949494;
-}
-
-#bsrh-matched {
-  width: 3em;
-}
+/* */
 
 .field-container[bsrh-moreincode=true] .plain-text-badge {
   opacity: 1 !important;
