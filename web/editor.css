@@ -13,38 +13,41 @@
   display: flex;
   justify-content: space-between;
   margin-top: 3px;
+  color: #aaa;
 }
 .bsrh-controls .left {
   font-size: 14px;
   margin-left: 5px;
   font-family: monospace;
+  display: flex;
+  align-items: center;
 }
 .bsrh-controls .sub-total {
-  color: #aaa;
   font-size: 11px;
 }
 .bsrh-controls .separator {
-    color: #717171;
-    font-size: 10px;
+  color: #717171;
 }
-.bsrh-controls .right {
-  display: flex;
-  align-items: center;
-  margin-right: 1px;
+.bsrh-controls .separator.small {
+  font-size: 10px;
+  vertical-align: 2px;
 }
-.bsrh-controls .checkbox {
-  margin-right: 4px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.bsrh-controls .match-count-holder[matched=true] {
+  color: #fcfcfc;
+  font-weight: 500;
 }
-.bsrh-controls .settings, .bsrh-controls .settings:hover, .bsrh-controls .settings:active {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding-right: 0;
+.bsrh-controls .sub-total span[matched=true] span {
+  font-weight: 800;
 }
+.bsrh-controls .auto-state-holder span {
+  text-decoration: underline;
+  cursor: pointer;
+}
+.bsrh-controls .settings {
+  margin-left: 5px;
+}
+
+
 
 /* */
 

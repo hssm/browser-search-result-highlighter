@@ -67,39 +67,38 @@ let controls =
 `
 <div class="bsrh-controls">
     <div class="left">
-        <span id="bsrh-total">0 Matches</span>
+        <span class="match-count-holder">
+            <span class="match-count-number">0</span>
+            <span class="match-count-text">Matches</span>
+            <span class="separator large">｜</span>
+        </span>
         <span class="sub-total">
-          Fields: <span id="bsrh-nfields">0</span>
-          <span class="separator">|</span>
-          Tags: <span id="bsrh-ntags">0</span>
+          <span class='field-count-holder'>Fields: <span>0</span></span>
+          <span class="separator small">|</span>
+          <span class='tag-count-holder'>Tags: <span>0</span></span>
+          <span class="separator small">|</span>
+          <span class='auto-state-holder'
+                onclick='onAuto()'>Auto-scroll: <span>Off</span></span>
         </span>
-    </div>
-
-    <div class="right">
-        <span class="checkbox">
-            <input type="checkbox" id="bsrh-auto" name="bsrh-auto"/>
-            <label for="bsrh-auto">Auto Scroll</label>
-        </span>
-        <button class="settings"></button>
+        <span class="separator small">|</span>
+        <span class="settings"></span>
     </div>
 </div>
 `
 
 function addControls(auto) {
-    // First load has a race condition. Keep trying until toolbar appears.
+    auto_scroll = auto;
+
+    // First load has a race condition. Keep trying until element appears.
     let editor = document.querySelector('.note-editor');
     if (!editor) {
         setTimeout(() => {addControls(auto)}, 20)
         return;
     }
     editor.insertAdjacentHTML("beforeend", controls);
-    let checkbox = editor.querySelector('#bsrh-auto');
-    checkbox.addEventListener('change', onAuto);
-    checkbox.checked = auto;
-    auto_scroll = auto;
 
     // Steal the cog icon and shove it into our own settings button
-    let cog = document.querySelector('.floating-reference').cloneNode(true);
+    let cog = document.querySelector('.floating-reference button span').cloneNode(true);
     editor.querySelector('.bsrh-controls .settings').append(cog);
 
     // Add the minimap
@@ -110,22 +109,31 @@ function addControls(auto) {
     let fieldarea = document.querySelector('.scroll-area .fields');
     resizeObserver.observe(fieldarea);
     resizeObserver.observe(scrollarea);
+    updateControls();
 }
 
 function updateControls() {
-    let total_text = '';
-    if (matched_total == 0) {
-        total_text = '0 Matches';
-    } else if (matched_total == 1) {
-        total_text = '1 Match';
-    } else {
-        total_text = matched_total + ' Matches';
-    }
-    document.getElementById('bsrh-total').innerHTML = total_text;
-    document.getElementById('bsrh-total').setAttribute('matched', matched_total > 0)
-    document.getElementById('bsrh-nfields').innerHTML = matched_fields;
-    document.getElementById('bsrh-ntags').innerHTML = matched_tags;
     document.querySelector('.scroll-area').setAttribute('highlighting', matched_total > 0);
+    let c = document.querySelector('.bsrh-controls');
+
+    // Total matches
+    let total_text = matched_total == 1 ? 'Match' : 'Matches';
+
+    c.querySelector('.match-count-number').innerHTML = matched_total;
+    c.querySelector('.match-count-text').innerHTML = total_text;
+    c.querySelector('.match-count-holder').setAttribute('matched', matched_total > 0);
+
+    // Fields
+    c.querySelector('.field-count-holder').setAttribute('matched', matched_fields > 0);
+    c.querySelector('.field-count-holder span').innerHTML = matched_fields;
+
+    // Tags
+    c.querySelector('.tag-count-holder').setAttribute('matched', matched_tags > 0);
+    c.querySelector('.tag-count-holder span').innerHTML = matched_tags;
+
+    // Auto-scroll
+    c.querySelector('.auto-state-holder').setAttribute('matched', auto_scroll);
+    c.querySelector('.auto-state-holder span').innerHTML = auto_scroll ? 'On' : 'Off';
 }
 
 // Build regexes from the string given to us by python
@@ -415,8 +423,9 @@ function highlightTags() {
 
 // UI controls
 function onAuto(event) {
-  auto_scroll = event.target.checked;
+  auto_scroll = !auto_scroll;
   pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
+  updateControls();
 }
 
 function scrollToMatch() {
