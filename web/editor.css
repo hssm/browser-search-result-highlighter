@@ -12,7 +12,7 @@
 .bsrh-controls {
   display: flex;
   justify-content: space-between;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 .bsrh-controls .left {
   font-size: 14px;
@@ -39,8 +39,11 @@
   align-items: center;
   gap: 4px;
 }
-.bsrh-controls .settings {
-  position: relative;
+.bsrh-controls .settings, .bsrh-controls .settings:hover, .bsrh-controls .settings:active {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding-right: 0;
 }
 
 /* */

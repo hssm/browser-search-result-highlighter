@@ -80,9 +80,7 @@ let controls =
             <input type="checkbox" id="bsrh-auto" name="bsrh-auto"/>
             <label for="bsrh-auto">Auto Scroll</label>
         </span>
-        <span class="settings">
-            <button class="bsrh-settings"></button>
-        </span>
+        <button class="settings"></button>
     </div>
 </div>
 `
@@ -101,8 +99,8 @@ function addControls(auto) {
     auto_scroll = auto;
 
     // Steal the cog icon and shove it into our own settings button
-    let cog = document.getElementById('mdi-cog').cloneNode(true);
-    editor.querySelector('.bsrh-settings').append(cog);
+    let cog = document.querySelector('.floating-reference').cloneNode(true);
+    editor.querySelector('.bsrh-controls .settings').append(cog);
 
     // Add the minimap
     let scrollarea = document.querySelector('.scroll-area-relative');
@@ -123,8 +121,8 @@ function updateControls() {
     } else {
         total_text = matched_total + ' Matches';
     }
-    document.getElementById('bsrh-main-total').innerHTML = total_text;
-    document.getElementById('bsrh-main-total').setAttribute('matched', matched_total > 0)
+    document.getElementById('bsrh-total').innerHTML = total_text;
+    document.getElementById('bsrh-total').setAttribute('matched', matched_total > 0)
     document.getElementById('bsrh-nfields').innerHTML = matched_fields;
     document.getElementById('bsrh-ntags').innerHTML = matched_tags;
     document.querySelector('.scroll-area').setAttribute('highlighting', matched_total > 0);
