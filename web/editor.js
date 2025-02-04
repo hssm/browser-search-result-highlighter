@@ -66,23 +66,18 @@ const resizeObserver = new ResizeObserver(entries => {
 let controls =
 `
 <div class="bsrh-controls">
-    <div class="left">
-        <span class="match-count-holder">
-            <span class="match-count-number">0</span>
-            <span class="match-count-text">Matches</span>
-            <span class="separator large">｜</span>
-        </span>
-        <span class="sub-total">
-          <span class='field-count-holder'>Fields: <span>0</span></span>
-          <span class="separator small">|</span>
-          <span class='tag-count-holder'>Tags: <span>0</span></span>
-          <span class="separator small">|</span>
-          <span class='auto-state-holder'
-                onclick='onAuto()'>Auto-scroll: <span>Off</span></span>
-        </span>
-        <span class="separator small">|</span>
-        <span class="settings"></span>
-    </div>
+    <span class="match-count-holder">
+      <span class="match-count-number">0</span>
+      <span class="match-count-text">Matches</span>
+    </span>
+    <span class="sub-total">
+      <span class='field-count-holder'>Fields: <span>0</span></span>
+      <span class="separator">❘</span>
+      <span class='tag-count-holder'>Tags: <span>0</span></span>
+      <span class="separator">❘</span>
+      <span class='auto-state-holder'>Scroll:&nbsp; <span onclick='onAuto()'>Off</span></span>
+      <span class="settings"></span>
+    </span>
 </div>
 `
 
@@ -117,7 +112,7 @@ function updateControls() {
     let c = document.querySelector('.bsrh-controls');
 
     // Total matches
-    let total_text = matched_total == 1 ? 'Match' : 'Matches';
+    let total_text = matched_total == 1 ? 'Match&nbsp;&nbsp;' : 'Matches';
 
     c.querySelector('.match-count-number').innerHTML = matched_total;
     c.querySelector('.match-count-text').innerHTML = total_text;
