@@ -8,25 +8,80 @@
   color: #121212;
 }
 
-#bsrh-controls {
+/* UI Controls */
+.bsrh-controls {
+  display: flex;
+  color: #666;
+  font-size: 14px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  margin-bottom: 1px;
   margin-left: auto;
-  margin-right: 8px;
+  margin-right: 1px;
+}
+.night_mode .bsrh-controls {
+  color: #aaa;
+}
+.bsrh-controls .match-count-holder {
+  margin-right: 6px;
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 1px;
+}
+.bsrh-controls .sub-total {
+  font-size: 12px;
   display: flex;
   align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border-radius: 3px;
+  background-color: #00000005;
+  outline: 1px ridge #e5e5e5;
+}
+.night_mode .bsrh-controls .sub-total {
+  background-color: #00000022;
+  outline: 1px ridge #222;
+}
+.bsrh-controls .separator {
+  color: #9d9c9c;
+  font-size: 9px;
+}
+.night_mode.bsrh-controls .separator {
+  color: #7c7c7c;
+}
+.bsrh-controls .match-count-holder[matched=true] {
+  color: #000;
+  font-weight: 500;
+}
+.night_mode .bsrh-controls .match-count-holder[matched=true] {
+  color: #fcfcfc;
+}
+.bsrh-controls .sub-total span span {
+  min-width: 2em;
+  display: inline-block;
+  text-align: center;
+  margin: 0 -6px;
+}
+.bsrh-controls .sub-total span[matched=true] span {
+  font-weight: 800;
+}
+.bsrh-controls .auto-state-holder span {
+  text-decoration: underline;
+  cursor: pointer;
+}
+.bsrh-controls .settings {
+  margin-left: 1em;
+  display: none;
+}
+.bsrh-controls .settings span {
+  --icon-size: 65% !important;
+  vertical-align: -webkit-baseline-middle;
+  cursor: pointer;
+  bottom: 1px;
 }
 
-#bsrh-controls > * {
-  margin: 0 4px;
-}
-
-#bsrh-separator {
-  color: #949494;
-}
-
-#bsrh-matched {
-  width: 3em;
-}
-
+/* Code button */
 .field-container[bsrh-moreincode=true] .plain-text-badge {
   opacity: 1 !important;
 }
@@ -34,12 +89,12 @@
   outline: 2px dashed #a6a070;
   background: #ffe500;
 }
-
 .night_mode .field-container[bsrh-moreincode=true] .plain-text-badge button > span {
   outline: 2px dashed #fff068;
   background: unset;
 }
 
+/* Minimap */
 #match-minimap {
   display: flex;
   width: 12px;
@@ -50,7 +105,6 @@
   pointer-events: none;
   z-index: 100;
 }
-
 .match-position {
   position: absolute;
   width: 100%;
@@ -60,7 +114,6 @@
 .night_mode .match-position {
   background-color: #c5b204;
 }
-
 .scroll-area[highlighting=true] {
   scrollbar-gutter: stable
 }

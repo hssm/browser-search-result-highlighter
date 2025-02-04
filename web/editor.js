@@ -20,6 +20,9 @@ let matched_total = 0;
 // Number of fields with matches
 let matched_fields = 0;
 
+// Number of tags with matches
+let matched_tags = 0;
+
 const matchCount = (str, re) => {
   return str?.match(re)?.length ?? 0;
 };
@@ -62,27 +65,36 @@ const resizeObserver = new ResizeObserver(entries => {
 // UI controls
 let controls =
 `
-<span id="bsrh-controls">
-    <input type="checkbox" id="bsrh-auto" name="bsrh-auto"/>
-    <label for="bsrh-auto">Auto Scroll</label>
-    <span id="bsrh-separator">|</span>
-    <span id="bsrh-mtotal">0</span> matches in
-    <span id="bsrh-mfields">0</span> fields
-</span>
+<div class="bsrh-controls">
+    <span class="match-count-holder">
+      <span class="match-count-number">0</span>
+      <span class="match-count-text">Matches</span>
+    </span>
+    <span class="sub-total">
+      <span class='field-count-holder'>Fields: <span>0</span></span>
+      <span class="separator">❘</span>
+      <span class='tag-count-holder'>Tags: <span>0</span></span>
+      <span class="separator">❘</span>
+      <span class='auto-state-holder'>Scroll:&nbsp; <span onclick='onAuto()'>Off</span></span>
+      <span class="settings"></span>
+    </span>
+</div>
 `
 
 function addControls(auto) {
-    // First load has a race condition. Keep trying until toolbar appears.
+    auto_scroll = auto;
+
+    // First load has a race condition. Keep trying until element appears.
     let toolbar = document.querySelector('div[role="toolbar"]');
     if (!toolbar) {
         setTimeout(() => {addControls(auto)}, 20)
         return;
     }
     toolbar.insertAdjacentHTML("beforeend", controls);
-    let checkbox = toolbar.querySelector('#bsrh-auto');
-    checkbox.addEventListener('change', onAuto);
-    auto_scroll = auto;
-    checkbox.checked = auto;
+
+    // Steal the cog icon and shove it into our own settings button
+    let cog = document.querySelector('.floating-reference button span').cloneNode(true);
+    toolbar.querySelector('.bsrh-controls .settings').append(cog);
 
     // Add the minimap
     let scrollarea = document.querySelector('.scroll-area-relative');
@@ -92,12 +104,31 @@ function addControls(auto) {
     let fieldarea = document.querySelector('.scroll-area .fields');
     resizeObserver.observe(fieldarea);
     resizeObserver.observe(scrollarea);
+    updateControls();
 }
 
 function updateControls() {
-    document.getElementById('bsrh-mtotal').innerHTML = matched_total;
-    document.getElementById('bsrh-mfields').innerHTML = matched_fields;
     document.querySelector('.scroll-area').setAttribute('highlighting', matched_total > 0);
+    let c = document.querySelector('.bsrh-controls');
+
+    // Total matches
+    let total_text = matched_total == 1 ? 'Match&nbsp;&nbsp;' : 'Matches';
+
+    c.querySelector('.match-count-number').innerHTML = matched_total;
+    c.querySelector('.match-count-text').innerHTML = total_text;
+    c.querySelector('.match-count-holder').setAttribute('matched', matched_total > 0);
+
+    // Fields
+    c.querySelector('.field-count-holder').setAttribute('matched', matched_fields > 0);
+    c.querySelector('.field-count-holder span').innerHTML = matched_fields;
+
+    // Tags
+    c.querySelector('.tag-count-holder').setAttribute('matched', matched_tags > 0);
+    c.querySelector('.tag-count-holder span').innerHTML = matched_tags;
+
+    // Auto-scroll
+    c.querySelector('.auto-state-holder').setAttribute('matched', auto_scroll);
+    c.querySelector('.auto-state-holder span').innerHTML = auto_scroll ? 'On' : 'Off';
 }
 
 // Build regexes from the string given to us by python
@@ -114,6 +145,7 @@ function beginHighlighter() {
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
+    matched_tags = 0;
     let containers = document.querySelectorAll('.field-container');
     if (containers.length == 0) {
       return;
@@ -377,6 +409,8 @@ function highlightTags() {
                     'endOffset': match.index + match[0].length
                 });
                 CSS.highlights.get('tag').add(r);
+                matched_tags++;
+                matched_total++;
             });
         });
     });
@@ -384,8 +418,9 @@ function highlightTags() {
 
 // UI controls
 function onAuto(event) {
-  auto_scroll = event.target.checked;
+  auto_scroll = !auto_scroll;
   pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
+  updateControls();
 }
 
 function scrollToMatch() {
