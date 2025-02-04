@@ -24,14 +24,17 @@
 }
 .bsrh-controls .match-count-holder {
   margin-right: 6px;
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 1px;
 }
 .bsrh-controls .sub-total {
   font-size: 12px;
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 0 5px;
-  margin-left: 2px;
+  padding: 0 8px;
   border-radius: 3px;
   background-color: #00000005;
   outline: 1px ridge #e5e5e5;
@@ -69,6 +72,7 @@
 }
 .bsrh-controls .settings {
   margin-left: 1em;
+  display: none;
 }
 .bsrh-controls .settings span {
   --icon-size: 65% !important;
