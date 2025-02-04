@@ -85,16 +85,16 @@ function addControls(auto) {
     auto_scroll = auto;
 
     // First load has a race condition. Keep trying until element appears.
-    let editor = document.querySelector('.note-editor');
-    if (!editor) {
+    let toolbar = document.querySelector('div[role="toolbar"]');
+    if (!toolbar) {
         setTimeout(() => {addControls(auto)}, 20)
         return;
     }
-    editor.insertAdjacentHTML("beforeend", controls);
+    toolbar.insertAdjacentHTML("beforeend", controls);
 
     // Steal the cog icon and shove it into our own settings button
     let cog = document.querySelector('.floating-reference button span').cloneNode(true);
-    editor.querySelector('.bsrh-controls .settings').append(cog);
+    toolbar.querySelector('.bsrh-controls .settings').append(cog);
 
     // Add the minimap
     let scrollarea = document.querySelector('.scroll-area-relative');
