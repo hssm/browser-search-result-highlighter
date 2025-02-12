@@ -289,6 +289,8 @@ function highlightField(container) {
     }
     // Add an attribute for styling scrollbar when we have matches
     document.querySelector('.scroll-area').setAttribute('highlighting', true);
+
+    fillMinimap();
 }
 
 function unhighlightField(container) {
@@ -376,7 +378,11 @@ function codeOnFocus(event) {
       fillMinimap();
     }, 0)
   } else {
-    unhighlightField(container);
+    setTimeout(() => {
+      // Highlight the field to fill out the minimap with the new matches before removing
+      highlightField(container);
+      unhighlightField(container);
+    }, 0)
   }
 }
 
