@@ -209,7 +209,8 @@ def build_regex_from_terms(terms):
 
     return out
 
-ignore = ['deck', 'preset', 'card', 'is', 'flag', 'prop', 'added', 'edited', 'rated', 'introduced', 'nid', 'cid']
+ignore = ['deck', 'note', 'card', 'flag', 'resched', 'prop', 'added', 'edited', 'introduced',
+          'rated', 'is', 'did', 'mid', 'nid', 'cid', 'dupe', 'has-cd', 'preset']
 
 if __name__ == "__main__":
     search = 'tag:animal::cat::lion tag:re:^parent$ tag:re:.*ani tag:anim*'
