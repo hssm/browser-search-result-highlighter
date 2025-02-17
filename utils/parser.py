@@ -119,12 +119,14 @@ def extract_searchable_terms(terms):
 
             if prefix in ignore:
                 continue
-            elif prefix == 'nc' or prefix == 'w': # Treat nc as a boundary. Should be enough for our case
+            elif prefix == 'w':
                 if len(main) > 1 and main[0] == '"' and main[-1] == '"':
                     main = main[1:-1]
                 extracted.append({'tag': 'boundary', 'term': main})
             elif prefix == 're':
                 extracted.append({'tag': 'regex', 'term': main})
+            elif prefix == 'nc':
+                extracted.append({'tag': 'noncombining', 'term': main})
             elif prefix == 'tag':
                 if main.startswith('re:'):
                     main = main[3:]
@@ -214,6 +216,7 @@ ignore = ['deck', 'note', 'card', 'flag', 'resched', 'prop', 'added', 'edited', 
 
 if __name__ == "__main__":
     search = 'tag:animal::cat::lion tag:re:^parent$ tag:re:.*ani tag:anim*'
+    search = 're:abcdef nc:chuán randomtext'
     nodes = parse_nodes(search)
     print(nodes)
     terms = extract_searchable_terms(nodes)
