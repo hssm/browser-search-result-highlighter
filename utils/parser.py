@@ -4,8 +4,7 @@ import re
 def parse_search(search):
     nodes = parse_nodes(search)
     terms = extract_searchable_terms(nodes)
-    regex = build_regex_from_terms(terms)
-    return regex
+    return build_payload_from_terms(terms)
 
 # Split search string by search terms
 def parse_nodes(search):
@@ -89,13 +88,15 @@ def extract_searchable_terms(terms):
     for term in terms:
         if not term:
             continue
+        # Keep a copy for regex where it may be case-sensitive
+        orig_term = term
         term = term.lower()
         if term[0] == '-':
             continue
         elif term.lower() == 'or' or term.lower() == 'and':
             continue
         elif term[0] == '(' and term[-1] == ')':
-            inner_terms = parse_nodes(term[1:-1])
+            inner_terms = parse_nodes(orig_term[1:-1])
             extracted.extend(extract_searchable_terms(inner_terms))
             continue
         elif term[0] in ["'", '"']:
@@ -124,7 +125,8 @@ def extract_searchable_terms(terms):
                     main = main[1:-1]
                 extracted.append({'tag': 'boundary', 'term': main})
             elif prefix == 're':
-                extracted.append({'tag': 'regex', 'term': main})
+                prefix, main = orig_term.split(':', 1)
+                extracted.append({'tag': 'regex', 'flags': [], 'term': main})
             elif prefix == 'nc':
                 extracted.append({'tag': 'noncombining', 'term': main})
             elif prefix == 'tag':
@@ -134,6 +136,7 @@ def extract_searchable_terms(terms):
                 else:
                     extracted.append({'tag': 'tag', 'regex': False, 'term': main})
             else:
+                prefix, main = orig_term.split(':', 1)
                 extracted.append({'tag': 'field', 'field_name': prefix, 'term': extract_searchable_terms([main])})
         else:
             extracted.append({'tag': 'normal', 'term': term})
@@ -170,42 +173,47 @@ def replace_special_tags(term, regex=False):
     return term
 
 
-def build_regex_from_terms(terms):
-    parts = []
+def build_payload_from_terms(terms):
+    normals = []
+    regexes = []
+    noncombs = []
     fields = {}
     tags = []
     specials = True
     for node in terms:
         if isinstance(node['term'], list):
-            node['term'] = build_regex_from_terms(node['term'])['all']
+            node['term'] = build_payload_from_terms(node['term'])
             # Already handled from above call. Avoid doing it again
             specials = False
 
         if specials and node['tag'] != 'regex' and node['tag'] != 'tag':
             node['term'] = replace_special(node['term'])
         if node['tag'] == 'normal':
-            parts.append(node['term'])
+            normals.append(node['term'])
         if node['tag'] == 'boundary':
-            parts.append(r'\b' + node['term'] + r'\b')
+            normals.append(r'\b' + node['term'] + r'\b')
         if node['tag'] == 'quoted':
-            # TODO: not clear yet if we need to do something different for this
-            parts.append(node['term'])
+            normals.append(node['term'])
         if node['tag'] == 'field':
             fparts = fields.setdefault(node['field_name'], [])
             fparts.append(node['term'])
         if node['tag'] == 'regex':
-            parts.append(node['term'])
+            regexes.append(node['term'])
+        if node['tag'] == 'noncombining':
+            noncombs.append(node['term'])
         if node['tag'] == 'tag':
             node['term'] = replace_special_tags(node['term'], node['regex'])
             tags.append(node['term'])
 
     out = {
-        'all': "|".join(parts),
+        'normal': normals,
+        'regex': regexes,
+        'noncombining': noncombs,
         'fields': {},
         'tags': []
     }
     for fname, fparts in fields.items():
-        out['fields'][fname] = "|".join(fparts)
+        out['fields'][fname] = fparts
     if tags:
         out['tags'] = tags
 
@@ -215,11 +223,19 @@ ignore = ['deck', 'note', 'card', 'flag', 'resched', 'prop', 'added', 'edited', 
           'rated', 'is', 'did', 'mid', 'nid', 'cid', 'dupe', 'has-cd', 'preset']
 
 if __name__ == "__main__":
+    from pprint import pprint
+
     search = 'tag:animal::cat::lion tag:re:^parent$ tag:re:.*ani tag:anim*'
-    search = 're:abcdef nc:chuán randomtext'
+    search = ('re:aBCdeF nc:chuán RandomText1 '
+              'front:re:reFRONT front:fff back:BACK back:nc:impossible '
+              're:MoO RandomText2 tag:t1 tag:TAG2 (cat or (dog and mouse)) '
+              're:a OR (re:Ab re:Cd) '
+              'nc:x OR (nc:Yz nc:Vw) '
+              '"animal front:long text"')
+
     nodes = parse_nodes(search)
     print(nodes)
     terms = extract_searchable_terms(nodes)
     print(terms)
-    regex = build_regex_from_terms(terms)
-    print(regex)
+    payload = build_payload_from_terms(terms)
+    pprint(payload)
