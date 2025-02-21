@@ -2,7 +2,7 @@
 let terms_str = null;
 
 // Parsed in javascript
-let terms = null;
+let terms_parsed = null;
 
 // Dictionary of regexes to find matches per field. Index is field name.
 // The empty string key is applicable to all fields.
@@ -133,7 +133,7 @@ function updateControls() {
 
 // Build regexes from the string given to us by python
 function parseTerms() {
-  terms = JSON.parse(atob(terms_str));
+  terms_parsed = JSON.parse(atob(terms_str));
 }
 
 // Do initial work after note loads.
@@ -154,7 +154,8 @@ function beginHighlighter() {
     document.querySelector('#match-minimap').innerHTML = '';
 
     // No work to do if no search terms
-    if (terms.length == 0) {
+    // TODO: this is wrong now
+    if (terms_parsed.length == 0) {
       updateControls();
       return;
     }
@@ -191,77 +192,116 @@ function beginHighlighter() {
 
 // Highlight a single field
 function highlightField(container) {
-    // Combine the regexes for field match and all match
-    current_res = []
-    if (terms['all'].length && terms['all'] != '.*') {
-        current_res.push(terms['all']);
-    }
-    field_name = container.querySelector('.label-name').textContent.toLowerCase();
-    Object.keys(terms['fields']).forEach(k => {
-        k = k.toLowerCase();
-        if (k.endsWith('*')) {
-            let start = k.substr(0, k.length-1);
-            if (field_name.startsWith(start)) {
-                if (terms['fields'][k] != '.*') {
-                    current_res.push(terms['fields'][k])
-                }
-            }
-        } else if (k == field_name) {
-            if (terms['fields'][k].length && terms['fields'][k] != '.*') {
-                current_res.push(terms['fields'][k])
-            }
-        }
-    })
-    re = current_res.join('|');
-
-    // Didn't search for anything
-    if (re.length == 0) {
-      return;
-    }
-
-    re = new RegExp(re, "gi");
-
+    let terms = JSON.parse(JSON.stringify(terms_parsed));
     let field_root = container.querySelector('.rich-text-editable').shadowRoot;
     let editable = field_root.querySelector('anki-editable');
     let code_mirror = container.querySelector('.CodeMirror textarea');
     if (code_mirror && code_mirror.closest('.plain-text-input').hasAttribute('hidden')) {
         code_mirror = null;
     }
+    field_name = container.querySelector('.label-name').textContent.toLowerCase();
 
     // Note on counting matches: We count the matches on the text nodes in the field instead of the whole field's
     // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
     // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
 
-    let highlightCount = 0;
-    function highlightInChildren(node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            let matches = [...node.data.matchAll(re)];
-            matches.forEach((match) => {
-                highlightCount++;
-                let r = new StaticRange({
-                    'startContainer': node,
-                    'endContainer': node,
-                    'startOffset': match.index,
-                    'endOffset': match.index + match[0].length
+    function highlightWithin(node, regex) {
+        let match_count = 0;
+        function highlightWithinInner(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                let matches = [...node.data.matchAll(regex)];
+                matches.forEach((match) => {
+                    match_count++;
+                    let r = new StaticRange({
+                        'startContainer': node,
+                        'endContainer': node,
+                        'startOffset': match.index,
+                        'endOffset': match.index + match[0].length
+                    });
+                    r.owner = container;
+                    CSS.highlights.get('match').add(r);
+                    if (scroll_to === null) {
+                        scroll_to = r;
+                    }
                 });
-                r.owner = container;
-                CSS.highlights.get('match').add(r);
-                if (scroll_to === null) {
-                    scroll_to = r;
-                }
-            });
-        } else {
-            node.childNodes.forEach(n => highlightInChildren(n))
+            } else {
+                node.childNodes.forEach(n => highlightWithinInner(n))
+            }
         }
+        highlightWithinInner(node);
+        return match_count;
     }
-    highlightInChildren(editable);
 
-    let match_count_editable = highlightCount;
-    let match_count_code = matchCount(editable.innerHTML, re);
+    // If any of the search terms have a field prefix that match this field, extract
+    // the search terms and redistribute them to their respective type
+    // TODO: comment
+    Object.keys(terms['fields']).forEach(k => {
+        let distribute = false;
+        k = k.toLowerCase();
+        if (k.endsWith('*')) {
+            let start = k.substr(0, k.length-1);
+            if (field_name.startsWith(start)) {
+                distribute = true;
+            }
+        // TODO: endswith as well. in middle?
+        } else if (k == field_name) {
+            distribute = true;
+        }
 
-    if (code_mirror) {
-        highlightInChildren(code_mirror.closest('.CodeMirror'));
-    }
+        if (distribute) {
+            for (let i = 0; i < terms['fields'][k].length; i++) {
+                i_term = terms['fields'][k][i];
+                terms['normal'].push(...i_term['normal']);
+                terms['regex'].push(...i_term['regex']);
+                terms['noncomb'].push(...i_term['noncomb']);
+            }
+        }
+    });
+
+//    console.log(field_name);
+//    console.log(JSON.stringify(terms));
+
+    let match_count_editable = 0;
+    let match_count_code = 0;
+
+    // Match normal terms
+    terms['normal'].forEach(term => {
+        if (term.length == 0 || term == ".*") {
+            return;
+        }
+        let re = new RegExp(term, "gi");
+        match_count_editable += highlightWithin(editable, re);
+        match_count_code += matchCount(editable.innerHTML, re);
+        if (code_mirror) {
+            highlightWithin(code_mirror.closest('.CodeMirror'), re);
+        }
+    })
+
+    // Match regex terms
+    terms['regex'].forEach(term => {
+        if (term['term'].length == 0 || term['term'] == ".*") {
+            return;
+        }
+        let re = new RegExp(term['term'], term['flags']);
+        match_count_editable += highlightWithin(editable, re);
+        match_count_code += matchCount(editable.innerHTML, re);
+        if (code_mirror) {
+            highlightWithin(code_mirror.closest('.CodeMirror'), re);
+        }
+    })
+
+    // Match non-combining terms
+    terms['noncomb'].forEach(term => {
+        if (term.length == 0 || term == ".*") {
+            return;
+        }
+        let re = new RegExp(term, "giu");
+        match_count_editable += highlightWithin(editable, re);
+        match_count_code += matchCount(editable.innerHTML, re);
+        if (code_mirror) {
+            highlightWithin(code_mirror.closest('.CodeMirror'), re);
+        }
+    })
 
     // Let's not try to do unnecessary work
     if (match_count_code + match_count_editable == 0) {
@@ -402,7 +442,7 @@ function unhighlightCodeExpander(container) {
 
 function highlightTags() {
     let buttons = document.querySelectorAll("button[data-addon-tag]");
-    terms['tags'].forEach(tag => {
+    terms_parsed['tags'].forEach(tag => {
         let re = new RegExp(tag, "gi");
         buttons.forEach(element => {
             let tag_text = element.querySelector('span').childNodes[0];

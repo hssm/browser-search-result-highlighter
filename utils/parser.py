@@ -137,7 +137,7 @@ def extract_searchable_terms(terms):
                     extracted.append({'tag': 'tag', 'regex': False, 'term': main})
             else:
                 prefix, main = orig_term.split(':', 1)
-                extracted.append({'tag': 'field', 'field_name': prefix, 'term': extract_searchable_terms([main])})
+                extracted.append({'tag': 'field', 'field_name': prefix.lower(), 'term': extract_searchable_terms([main])})
         else:
             extracted.append({'tag': 'normal', 'term': term})
     return extracted
@@ -198,7 +198,8 @@ def build_payload_from_terms(terms):
             fparts = fields.setdefault(node['field_name'], [])
             fparts.append(node['term'])
         if node['tag'] == 'regex':
-            regexes.append(node['term'])
+            node['flags'] = 'igu' # TODO handle flags
+            regexes.append({'term': node['term'], 'flags': node['flags']})
         if node['tag'] == 'noncombining':
             noncombs.append(node['term'])
         if node['tag'] == 'tag':
@@ -208,14 +209,12 @@ def build_payload_from_terms(terms):
     out = {
         'normal': normals,
         'regex': regexes,
-        'noncombining': noncombs,
+        'noncomb': noncombs,
         'fields': {},
-        'tags': []
+        'tags': tags
     }
     for fname, fparts in fields.items():
         out['fields'][fname] = fparts
-    if tags:
-        out['tags'] = tags
 
     return out
 
@@ -226,8 +225,8 @@ if __name__ == "__main__":
     from pprint import pprint
 
     search = 'tag:animal::cat::lion tag:re:^parent$ tag:re:.*ani tag:anim*'
-    search = ('re:aBCdeF nc:chuán RandomText1 '
-              'front:re:reFRONT front:fff back:BACK back:nc:impossible '
+    search = ('re:aBCdeF nc:chuán RandomText1 d.g c*t &lt;art&gt; '
+              'fRoNt:re:reFRONT front:fff BACK:BACK back:nc:impossible '
               're:MoO RandomText2 tag:t1 tag:TAG2 (cat or (dog and mouse)) '
               're:a OR (re:Ab re:Cd) '
               'nc:x OR (nc:Yz nc:Vw) '
