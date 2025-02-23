@@ -205,11 +205,15 @@ function highlightField(container) {
     // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
     // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
 
-    function highlightWithin(node, regex) {
+    function highlightWithin(node, regex, normalize=false) {
         let match_count = 0;
         function highlightWithinInner(node) {
             if (node.nodeType === Node.TEXT_NODE) {
-                let matches = [...node.data.matchAll(regex)];
+                let data = node.data;
+                if (normalize) {
+                    data = data.normalize("NFKD").replace(/\p{M}/gu, '');
+                }
+                let matches = [...data.matchAll(regex)];
                 matches.forEach((match) => {
                     match_count++;
                     let r = new StaticRange({
@@ -295,11 +299,19 @@ function highlightField(container) {
         if (term.length == 0 || term == ".*") {
             return;
         }
-        let re = new RegExp(term, "giu");
-        match_count_editable += highlightWithin(editable, re);
-        match_count_code += matchCount(editable.innerHTML, re);
+        let search = term.normalize("NFKD").replace(/\p{M}/gu, '');
+
+        let regex_build = [];
+        regex_build.push('\\p{M}*');
+        for (let i = 0; i < search.length; i++) {
+          regex_build.push(search[i]);
+          regex_build.push('\\p{M}*');
+        }
+        let re = new RegExp(regex_build.join(''), 'giu');
+        match_count_editable += highlightWithin(editable, re, true);
+        match_count_code += matchCount(editable.innerHTML.normalize("NFKD"), re);
         if (code_mirror) {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re);
+            highlightWithin(code_mirror.closest('.CodeMirror'), re, true);
         }
     })
 
