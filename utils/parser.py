@@ -88,15 +88,13 @@ def extract_searchable_terms(terms):
     for term in terms:
         if not term:
             continue
-        # Keep a copy for regex where it may be case-sensitive
-        orig_term = term
-        term = term.lower()
+
         if term[0] == '-':
             continue
         elif term.lower() == 'or' or term.lower() == 'and':
             continue
         elif term[0] == '(' and term[-1] == ')':
-            inner_terms = parse_nodes(orig_term[1:-1])
+            inner_terms = parse_nodes(term[1:-1])
             extracted.extend(extract_searchable_terms(inner_terms))
             continue
         elif term[0] in ["'", '"']:
@@ -117,7 +115,7 @@ def extract_searchable_terms(terms):
             if len(term) > 1 and term[0] == '"' and term[-1] == '"':
                 term = term[1:-1]
             prefix, main = term.split(':', 1)
-
+            prefix = prefix.lower()
             if prefix in ignore:
                 continue
             elif prefix == 'w':
@@ -125,18 +123,20 @@ def extract_searchable_terms(terms):
                     main = main[1:-1]
                 extracted.append({'tag': 'boundary', 'term': main})
             elif prefix == 're':
-                prefix, main = orig_term.split(':', 1)
-                extracted.append({'tag': 'regex', 'flags': [], 'term': main})
+                flags = 'igu'
+                if main.lower().startswith('(?-i)'):
+                    main = main[5:]
+                    flags = 'gu'
+                extracted.append({'tag': 'regex', 'flags': flags, 'term': main})
             elif prefix == 'nc':
                 extracted.append({'tag': 'noncombining', 'term': main})
             elif prefix == 'tag':
-                if main.startswith('re:'):
+                if main.lower().startswith('re:'):
                     main = main[3:]
                     extracted.append({'tag': 'tag', 'regex': True, 'term': main})
                 else:
                     extracted.append({'tag': 'tag', 'regex': False, 'term': main})
             else:
-                prefix, main = orig_term.split(':', 1)
                 extracted.append({'tag': 'field', 'field_name': prefix.lower(), 'term': extract_searchable_terms([main])})
         else:
             extracted.append({'tag': 'normal', 'term': term})
@@ -198,7 +198,6 @@ def build_payload_from_terms(terms):
             fparts = fields.setdefault(node['field_name'], [])
             fparts.append(node['term'])
         if node['tag'] == 'regex':
-            node['flags'] = 'igu' # TODO handle flags
             regexes.append({'term': node['term'], 'flags': node['flags']})
         if node['tag'] == 'noncombining':
             noncombs.append(node['term'])
@@ -225,16 +224,23 @@ if __name__ == "__main__":
     from pprint import pprint
 
     search = 'tag:animal::cat::lion tag:re:^parent$ tag:re:.*ani tag:anim*'
-    search = ('re:aBCdeF nc:chuán RandomText1 d.g c*t &lt;art&gt; '
+    search = ('re:(?-i)aBCdeF nc:chuán RandomText1 d.g c*t &lt;art&gt; '
               'fRoNt:re:reFRONT front:fff BACK:BACK back:nc:impossible '
               're:MoO RandomText2 tag:t1 tag:TAG2 (cat or (dog and mouse)) '
               're:a OR (re:Ab re:Cd) '
               'nc:x OR (nc:Yz nc:Vw) '
               '"animal front:long text"')
+    search = '"re:(?-i)aBCdeF"'
+    search = '"animal front:long text" aAa "re:(?-i)aBCdeF"'
 
+    print("Nodes:")
     nodes = parse_nodes(search)
     print(nodes)
+
+    print("Terms:")
     terms = extract_searchable_terms(nodes)
     print(terms)
+
+    print("Payload:")
     payload = build_payload_from_terms(terms)
     pprint(payload)
