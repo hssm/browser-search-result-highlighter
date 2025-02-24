@@ -192,7 +192,12 @@ function beginHighlighter() {
 
 // Highlight a single field
 function highlightField(container) {
-    let terms = JSON.parse(JSON.stringify(terms_parsed));
+    let terms = {
+        'normal': [...terms_parsed['normal']],
+        'regex': [...terms_parsed['regex']],
+        'noncomb': [...terms_parsed['noncomb']]
+    }
+
     let field_root = container.querySelector('.rich-text-editable').shadowRoot;
     let editable = field_root.querySelector('anki-editable');
     let code_mirror = container.querySelector('.CodeMirror textarea');
@@ -239,7 +244,7 @@ function highlightField(container) {
     // If any of the search terms have a field prefix that match this field, extract
     // the search terms and redistribute them to their respective type
     // TODO: comment
-    Object.keys(terms['fields']).forEach(k => {
+    Object.keys(terms_parsed['fields']).forEach(k => {
         let distribute = false;
         k = k.toLowerCase();
         if (k.endsWith('*')) {
@@ -253,8 +258,8 @@ function highlightField(container) {
         }
 
         if (distribute) {
-            for (let i = 0; i < terms['fields'][k].length; i++) {
-                i_term = terms['fields'][k][i];
+            for (let i = 0; i < terms_parsed['fields'][k].length; i++) {
+                i_term = terms_parsed['fields'][k][i];
                 terms['normal'].push(...i_term['normal']);
                 terms['regex'].push(...i_term['regex']);
                 terms['noncomb'].push(...i_term['noncomb']);
