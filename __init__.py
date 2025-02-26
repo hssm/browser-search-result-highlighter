@@ -3,6 +3,7 @@
 
 import json
 
+import aqt.browser.browser
 from aqt import *
 from aqt import gui_hooks
 from aqt.browser import SearchContext
@@ -38,6 +39,8 @@ class BrowserSearchResultHighlighter:
 
     def on_webview_will_set_content(self, web_content: WebContent, context):
         if not isinstance(context, Editor):
+            return
+        if not isinstance(context.parentWindow, aqt.browser.browser.Browser):
             return
         web_content.js.append(f"/_addons/{addon_package}/web/editor.js")
         web_content.css.append(f"/_addons/{addon_package}/web/editor.css")
