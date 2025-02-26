@@ -81,30 +81,41 @@ let controls =
 </div>
 `
 
+let minimap = null;
+let scrollarea = null;
+let fieldarea = null;
+let toolbar = null;
+
 function addControls(auto) {
     auto_scroll = auto;
 
     // First load has a race condition. Keep trying until element appears.
-    let toolbar = document.querySelector('div[role="toolbar"]');
-    if (!toolbar) {
+    let _toolbar = document.querySelector('div[role="toolbar"]');
+    if (!_toolbar) {
         setTimeout(() => {addControls(auto)}, 20)
         return;
     }
-    toolbar.insertAdjacentHTML("beforeend", controls);
+    _toolbar.insertAdjacentHTML("beforeend", controls);
 
     // Steal the cog icon and shove it into our own settings button
     let cog = document.querySelector('.floating-reference button span').cloneNode(true);
-    toolbar.querySelector('.bsrh-controls .settings').append(cog);
+    _toolbar.querySelector('.bsrh-controls .settings').append(cog);
 
     // Add the minimap
-    let scrollarea = document.querySelector('.scroll-area-relative');
-    scrollarea.insertAdjacentHTML("beforeend", `<div id="match-minimap"></div>`);
+    let _scrollarea = document.querySelector('.scroll-area-relative');
+    _scrollarea.insertAdjacentHTML("beforeend", `<div id="match-minimap"></div>`);
 
     // Add observers to recalculate minimap positions on height changes
-    let fieldarea = document.querySelector('.scroll-area .fields');
-    resizeObserver.observe(fieldarea);
-    resizeObserver.observe(scrollarea);
+    let _fieldarea = document.querySelector('.scroll-area .fields');
+    resizeObserver.observe(_fieldarea);
+    resizeObserver.observe(_scrollarea);
     updateControls();
+
+    // Grab elements for later use
+    minimap = document.getElementById("match-minimap");
+    scrollarea = document.querySelector('.scroll-area');
+    fieldarea = _fieldarea;
+    toolbar = document.querySelector('.editor-toolbar');
 }
 
 function updateControls() {
@@ -211,10 +222,10 @@ function beginHighlighter() {
       return;
     }
     containers.forEach((c) => { unhighlightCodeExpander(c); })
-    document.querySelector('#match-minimap').innerHTML = '';
+    minimap.innerHTML = '';
 
     // Highlight all fields
-    containers.forEach((c) => { highlightField(c); })
+    containers.forEach((c) => { highlightField(c, minimap_now=false); })
 
     // Highlight tags
     highlightTags();
@@ -244,7 +255,9 @@ function beginHighlighter() {
 }
 
 // Highlight a single field
-function highlightField(container) {
+// minimap_now = false turns off minimap building for optimization. Call it manually
+// after all fields processed.
+function highlightField(container, minimap_now = true) {
     field_name = container.querySelector('.label-name').textContent.toLowerCase();
     let terms = {
         'normal': [...terms_parsed['normal']],
@@ -372,9 +385,11 @@ function highlightField(container) {
         scroll_to = container;
     }
     // Add an attribute for styling scrollbar when we have matches
-    document.querySelector('.scroll-area').setAttribute('highlighting', true);
+    scrollarea.setAttribute('highlighting', true);
 
-    fillMinimap();
+    if (minimap_now) {
+        fillMinimap();
+    }
 }
 
 function unhighlightField(container) {
@@ -386,11 +401,6 @@ function unhighlightField(container) {
 }
 
 function fillMinimap() {
-    let minimap = document.getElementById("match-minimap");
-    let scrollarea = document.querySelector('.scroll-area');
-    let fieldarea = document.querySelector('.scroll-area .fields');
-    let toolbar = document.querySelector('.editor-toolbar');
-
     // If the field area is too small to generate a scroll bar, we cap the height of the minimap in the
     // positioning calculation to match it. This gives us precise notch positioning when there's no scrolling.
     let max_y = fieldarea.scrollHeight;
@@ -440,7 +450,7 @@ function fillMinimap() {
     });
 
     minimap.innerHTML = '';
-    minimap.appendChild(fragment);
+    minimap.append(fragment);
 }
 
 function editableOnFocus(event) {
@@ -521,10 +531,6 @@ function scrollToMatch() {
     // The positioning code resembles the minimap notch positioning, but tweaked
     // to center after the position is found and without the percentage.
 
-    let scrollarea = document.querySelector('.scroll-area');
-    let fieldarea = document.querySelector('.scroll-area .fields');
-    let toolbar = document.querySelector('.editor-toolbar');
-
     let max_y = fieldarea.scrollHeight;
     if (fieldarea.scrollHeight < scrollarea.clientHeight) {
         return;
@@ -542,6 +548,6 @@ function scrollToMatch() {
     let tb = toolbar.clientHeight+1;
     let fromtop = scrollarea.scrollTop + rect.top + (rect.height / 2);
     let pos = fromtop-tb;
-    let centerd = pos - (scrollarea.clientHeight / 2);
-    scrollarea.scrollTo(0, centerd);
+    let centered = pos - (scrollarea.clientHeight / 2);
+    scrollarea.scrollTo(0, centered);
 }
