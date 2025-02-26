@@ -131,9 +131,69 @@ function updateControls() {
     c.querySelector('.auto-state-holder span').innerHTML = auto_scroll ? 'On' : 'Off';
 }
 
-// Build regexes from the string given to us by python
+// Consume the python payload containing the search terms
 function parseTerms() {
-  terms_parsed = JSON.parse(atob(terms_str));
+    let payload = JSON.parse(atob(terms_str));
+
+    // Pre-compile all the regexs for better performance and ignore match-none/match-all cases.
+
+    function compile_normals(terms) {
+        let out = [];
+        terms.forEach(term => {
+            if (term.length == 0 || term == ".*") {
+                return;
+            }
+            out.push(new RegExp(term, "gi"));
+        })
+        return out;
+    }
+    function compile_regexes(terms) {
+        let out = [];
+        terms.forEach(term => {
+            if (term['term'].length == 0 || term['term'] == ".*") {
+                return;
+            }
+            out.push(new RegExp(term['term'], term['flags']));
+        })
+        return out;
+    }
+    function compile_noncombs(terms) {
+        let out = [];
+        terms.forEach(term => {
+            if (term.length == 0 || term == ".*") {
+                return;
+            }
+            let search = term.normalize("NFKD").replace(/\p{M}/gu, '');
+            let regex_build = [];
+            regex_build.push('\\p{M}*');
+            for (let i = 0; i < search.length; i++) {
+              regex_build.push(search[i]);
+              regex_build.push('\\p{M}*');
+            }
+            out.push(new RegExp(regex_build.join(''), 'giu'));
+        })
+        return out;
+    }
+    function compile_fields(fields) {
+        let out = [];
+        fields.forEach(field => {
+            field['terms'] = {
+                'normal': compile_normals(field['terms']['normal']),
+                'regex' : compile_regexes(field['terms']['regex']),
+                'noncomb': compile_noncombs(field['terms']['noncomb'])
+            }
+            out.push(field);
+        })
+        return out;
+    }
+
+    terms_parsed = {
+        'normal':  compile_normals(payload['normal']),
+        'regex': compile_regexes(payload['regex']),
+        'noncomb': compile_noncombs(payload['noncomb']),
+        'fields': compile_fields(payload['fields']),
+        'tags': payload['tags']
+    };
 }
 
 // Do initial work after note loads.
@@ -152,13 +212,6 @@ function beginHighlighter() {
     }
     containers.forEach((c) => { unhighlightCodeExpander(c); })
     document.querySelector('#match-minimap').innerHTML = '';
-
-    // No work to do if no search terms
-    // TODO: this is wrong now
-    if (terms_parsed.length == 0) {
-      updateControls();
-      return;
-    }
 
     // Highlight all fields
     containers.forEach((c) => { highlightField(c); })
@@ -192,11 +245,35 @@ function beginHighlighter() {
 
 // Highlight a single field
 function highlightField(container) {
+    field_name = container.querySelector('.label-name').textContent.toLowerCase();
     let terms = {
         'normal': [...terms_parsed['normal']],
         'regex': [...terms_parsed['regex']],
         'noncomb': [...terms_parsed['noncomb']]
     }
+
+    // If any of the search terms have a field prefix that match this field, extract
+    // the search terms and redistribute them to their respective type
+    // TODO: comment
+    terms_parsed['fields'].forEach(field => {
+        let distribute = false;
+        k = field['name'].toLowerCase();
+        if (k.endsWith('*')) {
+            let start = k.substr(0, k.length-1);
+            if (field_name.startsWith(start)) {
+                distribute = true;
+            }
+        // TODO: endswith as well. in middle?
+        } else if (k == field_name) {
+            distribute = true;
+        }
+
+        if (distribute) {
+            terms['normal'].push(...field['terms']['normal']);
+            terms['regex'].push(...field['terms']['regex']);
+            terms['noncomb'].push(...field['terms']['noncomb']);
+        }
+    });
 
     let field_root = container.querySelector('.rich-text-editable').shadowRoot;
     let editable = field_root.querySelector('anki-editable');
@@ -204,7 +281,6 @@ function highlightField(container) {
     if (code_mirror && code_mirror.closest('.plain-text-input').hasAttribute('hidden')) {
         code_mirror = null;
     }
-    field_name = container.querySelector('.label-name').textContent.toLowerCase();
 
     // Note on counting matches: We count the matches on the text nodes in the field instead of the whole field's
     // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
@@ -241,44 +317,11 @@ function highlightField(container) {
         return match_count;
     }
 
-    // If any of the search terms have a field prefix that match this field, extract
-    // the search terms and redistribute them to their respective type
-    // TODO: comment
-    Object.keys(terms_parsed['fields']).forEach(k => {
-        let distribute = false;
-        k = k.toLowerCase();
-        if (k.endsWith('*')) {
-            let start = k.substr(0, k.length-1);
-            if (field_name.startsWith(start)) {
-                distribute = true;
-            }
-        // TODO: endswith as well. in middle?
-        } else if (k == field_name) {
-            distribute = true;
-        }
-
-        if (distribute) {
-            for (let i = 0; i < terms_parsed['fields'][k].length; i++) {
-                i_term = terms_parsed['fields'][k][i];
-                terms['normal'].push(...i_term['normal']);
-                terms['regex'].push(...i_term['regex']);
-                terms['noncomb'].push(...i_term['noncomb']);
-            }
-        }
-    });
-
-//    console.log(field_name);
-//    console.log(JSON.stringify(terms));
-
     let match_count_editable = 0;
     let match_count_code = 0;
 
     // Match normal terms
-    terms['normal'].forEach(term => {
-        if (term.length == 0 || term == ".*") {
-            return;
-        }
-        let re = new RegExp(term, "gi");
+    terms['normal'].forEach(re => {
         match_count_editable += highlightWithin(editable, re);
         match_count_code += matchCount(editable.innerHTML, re);
         if (code_mirror) {
@@ -287,11 +330,7 @@ function highlightField(container) {
     })
 
     // Match regex terms
-    terms['regex'].forEach(term => {
-        if (term['term'].length == 0 || term['term'] == ".*") {
-            return;
-        }
-        let re = new RegExp(term['term'], term['flags']);
+    terms['regex'].forEach(re => {
         match_count_editable += highlightWithin(editable, re);
         match_count_code += matchCount(editable.innerHTML, re);
         if (code_mirror) {
@@ -300,19 +339,7 @@ function highlightField(container) {
     })
 
     // Match non-combining terms
-    terms['noncomb'].forEach(term => {
-        if (term.length == 0 || term == ".*") {
-            return;
-        }
-        let search = term.normalize("NFKD").replace(/\p{M}/gu, '');
-
-        let regex_build = [];
-        regex_build.push('\\p{M}*');
-        for (let i = 0; i < search.length; i++) {
-          regex_build.push(search[i]);
-          regex_build.push('\\p{M}*');
-        }
-        let re = new RegExp(regex_build.join(''), 'giu');
+    terms['noncomb'].forEach(re => {
         match_count_editable += highlightWithin(editable, re, true);
         match_count_code += matchCount(editable.innerHTML.normalize("NFKD"), re);
         if (code_mirror) {

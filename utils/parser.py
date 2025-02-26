@@ -174,11 +174,14 @@ def replace_special_tags(term, regex=False):
 
 
 def build_payload_from_terms(terms):
-    normals = []
-    regexes = []
-    noncombs = []
-    fields = {}
-    tags = []
+    out = {
+        'normal': [],
+        'regex': [],
+        'noncomb': [],
+        'fields': [],
+        'tags': []
+    }
+
     specials = True
     for node in terms:
         if isinstance(node['term'], list):
@@ -188,33 +191,22 @@ def build_payload_from_terms(terms):
 
         if specials and node['tag'] != 'regex' and node['tag'] != 'tag':
             node['term'] = replace_special(node['term'])
+
         if node['tag'] == 'normal':
-            normals.append(node['term'])
+            out['normal'].append(node['term'])
         if node['tag'] == 'boundary':
-            normals.append(r'\b' + node['term'] + r'\b')
+            out['normal'].append(r'\b' + node['term'] + r'\b')
         if node['tag'] == 'quoted':
-            normals.append(node['term'])
+            out['normal'].append(node['term'])
         if node['tag'] == 'field':
-            fparts = fields.setdefault(node['field_name'], [])
-            fparts.append(node['term'])
+            out['fields'].append({'name': node['field_name'], 'terms': node['term']})
         if node['tag'] == 'regex':
-            regexes.append({'term': node['term'], 'flags': node['flags']})
+            out['regex'].append({'term': node['term'], 'flags': node['flags']})
         if node['tag'] == 'noncombining':
-            noncombs.append(node['term'])
+            out['noncomb'].append(node['term'])
         if node['tag'] == 'tag':
             node['term'] = replace_special_tags(node['term'], node['regex'])
-            tags.append(node['term'])
-
-    out = {
-        'normal': normals,
-        'regex': regexes,
-        'noncomb': noncombs,
-        'fields': {},
-        'tags': tags
-    }
-    for fname, fparts in fields.items():
-        out['fields'][fname] = fparts
-
+            out['tags'].append(node['term'])
     return out
 
 ignore = ['deck', 'note', 'card', 'flag', 'resched', 'prop', 'added', 'edited', 'introduced',
@@ -230,8 +222,8 @@ if __name__ == "__main__":
               're:a OR (re:Ab re:Cd) '
               'nc:x OR (nc:Yz nc:Vw) '
               '"animal front:long text"')
-    search = '"re:(?-i)aBCdeF"'
-    search = '"animal front:long text" aAa "re:(?-i)aBCdeF"'
+    # search = '"re:(?-i)aBCdeF"'
+    # search = '"animal front:long text" aAa "re:(?-i)aBCdeF"'
 
     print("Nodes:")
     nodes = parse_nodes(search)
