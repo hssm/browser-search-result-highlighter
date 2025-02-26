@@ -390,7 +390,6 @@ function fillMinimap() {
     let scrollarea = document.querySelector('.scroll-area');
     let fieldarea = document.querySelector('.scroll-area .fields');
     let toolbar = document.querySelector('.editor-toolbar');
-    minimap.innerHTML = '';
 
     // If the field area is too small to generate a scroll bar, we cap the height of the minimap in the
     // positioning calculation to match it. This gives us precise notch positioning when there's no scrolling.
@@ -399,6 +398,7 @@ function fillMinimap() {
         max_y = scrollarea.clientHeight;
     }
 
+    let fragment = new DocumentFragment();
 
     function addNotch(target) {
         // To get the correct position, we have to take into account how much the user has scrolled down
@@ -432,12 +432,15 @@ function fillMinimap() {
         // Cap min/max because they might be hard to see at the extremes
         pos = Math.min(99.6, Math.max(0.4, pos));
         notch.style.top = pos +"%";
-        minimap.append(notch);
+        fragment.append(notch);
     }
     CSS.highlights.get('match').forEach(hl => addNotch(hl));
     document.querySelectorAll(".field-container[bsrh-moreincode=true").forEach(container => {
       addNotch(container.querySelector('.plain-text-badge button > span'));
     });
+
+    minimap.innerHTML = '';
+    minimap.appendChild(fragment);
 }
 
 function editableOnFocus(event) {
