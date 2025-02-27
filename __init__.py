@@ -1,5 +1,5 @@
 # https://github.com/hssm/browser-search-result-highlighter
-# Version 2.5
+# Version 3.0
 
 import json
 
