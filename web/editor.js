@@ -119,7 +119,6 @@ function addControls(auto) {
 }
 
 function updateControls() {
-    document.querySelector('.scroll-area').setAttribute('highlighting', matched_total > 0);
     let c = document.querySelector('.bsrh-controls');
 
     // Total matches
@@ -371,8 +370,6 @@ function highlightField(container, minimap_now = true) {
     if (scroll_to === null) {
         scroll_to = container;
     }
-    // Add an attribute for styling scrollbar when we have matches
-    scrollarea.setAttribute('highlighting', true);
 
     if (minimap_now) {
         fillMinimap();

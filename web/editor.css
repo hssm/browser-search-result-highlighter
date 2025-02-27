@@ -114,6 +114,6 @@
 .night_mode .match-position {
   background-color: #c5b204;
 }
-.scroll-area[highlighting=true] {
+.scroll-area {
   scrollbar-gutter: stable
 }
