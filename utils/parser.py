@@ -199,7 +199,7 @@ def build_payload_from_terms(terms):
         if node['tag'] == 'quoted':
             out['normal'].append(node['term'])
         if node['tag'] == 'field':
-            out['fields'].append({'name': node['field_name'], 'terms': node['term']})
+            out['fields'].append({'name': replace_special(node['field_name']), 'terms': node['term']})
         if node['tag'] == 'regex':
             out['regex'].append({'term': node['term'], 'flags': node['flags']})
         if node['tag'] == 'noncombining':
@@ -224,6 +224,9 @@ if __name__ == "__main__":
               '"animal front:long text"')
     # search = '"re:(?-i)aBCdeF"'
     # search = '"animal front:long text" aAa "re:(?-i)aBCdeF"'
+    search = "fro*:cat *ont:cat f*nt:cat fr_nt:cat F___T:cAt back\\__\\front:cat"
+    search = "back\\__\\front:cat back\\to\\___\\future"
+
 
     print("Nodes:")
     nodes = parse_nodes(search)

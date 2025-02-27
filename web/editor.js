@@ -265,23 +265,10 @@ function highlightField(container, minimap_now = true) {
         'noncomb': [...terms_parsed['noncomb']]
     }
 
-    // If any of the search terms have a field prefix that match this field, extract
-    // the search terms and redistribute them to their respective type
-    // TODO: comment
+    // For any search term that targets a field name that matches this one, distribute
+    // its inner search terms into their respective types
     terms_parsed['fields'].forEach(field => {
-        let distribute = false;
-        k = field['name'].toLowerCase();
-        if (k.endsWith('*')) {
-            let start = k.substr(0, k.length-1);
-            if (field_name.startsWith(start)) {
-                distribute = true;
-            }
-        // TODO: endswith as well. in middle?
-        } else if (k == field_name) {
-            distribute = true;
-        }
-
-        if (distribute) {
+        if (new RegExp(field['name'], 'gi').test(field_name)) {
             terms['normal'].push(...field['terms']['normal']);
             terms['regex'].push(...field['terms']['regex']);
             terms['noncomb'].push(...field['terms']['noncomb']);
