@@ -268,7 +268,7 @@ function highlightField(container, minimap_now = true) {
     // For any search term that targets a field name that matches this one, distribute
     // its inner search terms into their respective types
     terms_parsed['fields'].forEach(field => {
-        if (new RegExp(field['name'], 'gi').test(field_name)) {
+        if (new RegExp('^'+field['name']+'$', 'gi').test(field_name)) {
             terms['normal'].push(...field['terms']['normal']);
             terms['regex'].push(...field['terms']['regex']);
             terms['noncomb'].push(...field['terms']['noncomb']);
