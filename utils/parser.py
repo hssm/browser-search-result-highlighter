@@ -143,17 +143,23 @@ def extract_searchable_terms(terms):
     return extracted
 
 def replace_special(term):
-    if '_' in term:
-        index = term.index('_')
-        if index == 0 or term[index - 1] != '\\':
-            term = term.replace('_', '.')
-    if '*' in term:
-        index = term.index('*')
-        if index == 0 or term[index - 1] != '\\':
-            term = term.replace('*', '.*')
-    if '\\:' in term:
-        term = term.replace('\\:', ':')
+    build_s = ''
+    in_escape = False
+    for c in term:
+        if c == '\\' and not in_escape:
+            in_escape = True
+        elif c == '\\' and in_escape:
+            in_escape = False
 
+        if c == '_' and not in_escape:
+            build_s += '.'
+        elif c == '*' and not in_escape:
+            build_s += '.*'
+        elif c == ':' and in_escape:
+            build_s += ':'
+        else:
+            build_s += c
+    term = build_s
     term = re.escape(term)
 
     if '\\\\' in term:
@@ -225,7 +231,8 @@ if __name__ == "__main__":
     # search = '"re:(?-i)aBCdeF"'
     # search = '"animal front:long text" aAa "re:(?-i)aBCdeF"'
     search = "fro*:cat *ont:cat f*nt:cat fr_nt:cat F___T:cAt back\\__\\front:cat"
-    search = "back\\__\\front:cat back\\to\\___\\future"
+    search = r"back\\__\\front:cat back\\to\\___\\future"
+    search = r"back\*\\___\\future"
 
 
     print("Nodes:")
