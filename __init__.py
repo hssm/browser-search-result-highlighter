@@ -34,7 +34,7 @@ class BrowserSearchResultHighlighter:
     def did_search(self, ctx: SearchContext):
         """Search has happened (regardless of source). Do highlight."""
         self.filter_terms = parse_search(ctx.search)
-        print("bsrh: Highlighting these terms: ", self.filter_terms)
+        #print("bsrh: Highlighting these terms: ", self.filter_terms)
 
 
     def on_webview_will_set_content(self, web_content: WebContent, context):
