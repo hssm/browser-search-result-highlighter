@@ -377,17 +377,21 @@ function highlightField(container, minimap_now = true) {
     let match_count_editable = 0;
     let match_count_code = 0;
 
+    let code = editable.innerHTML;
+    if (code.endsWith('<br>')) {
+        code = code.substring(0, code.length-3);
+    }
     terms['normal'].forEach(re => {
         match_count_editable += highlightWithin(editable, re);
-        match_count_code += matchCount(editable.innerHTML, re);
+        match_count_code += matchCount(code, re);
     })
     terms['regex'].forEach(re => {
         match_count_editable += highlightWithin(editable, re);
-        match_count_code += matchCount(editable.innerHTML, re);
+        match_count_code += matchCount(code, re);
     })
     terms['noncomb'].forEach(re => {
         match_count_editable += highlightWithin(editable, re, true);
-        match_count_code += matchCount(editable.innerHTML.normalize("NFKD"), re);
+        match_count_code += matchCount(code.normalize("NFKD"), re);
     })
     highlightOverlaps();
 
