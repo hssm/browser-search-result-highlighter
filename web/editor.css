@@ -3,13 +3,15 @@
   color: #121212;
 }
 ::highlight(overlap) {
-  background-color: #ffe5ff;
-  color: #551212;
+  background-color: #ffca00;
 }
 
 .night_mode ::highlight(match), .night_mode ::highlight(tag) {
   background-color: #fff068;
   color: #121212;
+}
+.night_mode ::highlight(overlap) {
+  background-color: #e8b907;
 }
 
 /* UI Controls */
