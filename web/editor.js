@@ -212,6 +212,7 @@ function beginHighlighter() {
     CSS.highlights.clear();
     CSS.highlights.set('match', new Highlight());
     CSS.highlights.set('tag', new Highlight());
+    CSS.highlights.set('overlap', new Highlight());
     scroll_to = null;
     matched_fields = 0;
     matched_total = 0;
@@ -285,6 +286,9 @@ function highlightField(container, minimap_now = true) {
     // editable.textContent because it gives us the same match behaviour as Anki's search. E.g., the field
     // gr<i>ee</i>tings does not match 'greetings', so we won't either, even if a user may expect it to.
 
+    // Track ranges to find overlaps
+    let ranges = new Map();
+
     function highlightWithin(node, regex, normalize=false) {
         let match_count = 0;
         function highlightWithinInner(node) {
@@ -307,6 +311,10 @@ function highlightField(container, minimap_now = true) {
                     if (scroll_to === null) {
                         scroll_to = r;
                     }
+                    if (!ranges.has(node)) {
+                        ranges.set(node, []);
+                    }
+                    ranges.get(node).push([r.startOffset, r.endOffset]);
                 });
             } else {
                 node.childNodes.forEach(n => highlightWithinInner(n))
@@ -316,35 +324,87 @@ function highlightField(container, minimap_now = true) {
         return match_count;
     }
 
+    function highlightOverlaps() {
+        for (let [node, _ranges] of ranges.entries()) {
+            let overlaps = new Set();
+            for (let i = 0; i < _ranges.length; i++) {
+                let n_start = _ranges[i][0];
+                let n_end   = _ranges[i][1];
+                for (let j = i+1; j < _ranges.length; j++) {
+                    let c_start = _ranges[j][0];
+                    let c_end   = _ranges[j][1];
+
+                    if (c_end < n_start) {
+                        continue;
+                    }
+                    if (c_start > n_end) {
+                        continue;
+                    }
+
+                    if (c_start <= n_start) {
+                        if (c_end <= n_end) {
+                            overlaps.add(JSON.stringify([n_start, c_end]));
+                        }
+                        if (c_end >= n_end) {
+                            overlaps.add(JSON.stringify([n_start, n_end]));
+                        }
+                    }
+                    if (c_start >= n_start) {
+                        if (c_end >= n_end) {
+                            overlaps.add(JSON.stringify([c_start, n_end]));
+                        }
+                        if (c_end <= n_end) {
+                            overlaps.add(JSON.stringify([c_start, c_end]));
+                        }
+                    }
+                }
+            }
+
+            overlaps.forEach(overlap => {
+                let o = JSON.parse(overlap);
+                let r = new StaticRange({
+                    'startContainer': node,
+                    'endContainer': node,
+                    'startOffset': o[0],
+                    'endOffset': o[1]
+                });
+                r.owner = container;
+                CSS.highlights.get('overlap').add(r);
+            });
+        }
+    }
+
     let match_count_editable = 0;
     let match_count_code = 0;
 
-    // Match normal terms
     terms['normal'].forEach(re => {
         match_count_editable += highlightWithin(editable, re);
         match_count_code += matchCount(editable.innerHTML, re);
-        if (code_mirror) {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re);
-        }
     })
-
-    // Match regex terms
     terms['regex'].forEach(re => {
         match_count_editable += highlightWithin(editable, re);
         match_count_code += matchCount(editable.innerHTML, re);
-        if (code_mirror) {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re);
-        }
     })
-
-    // Match non-combining terms
     terms['noncomb'].forEach(re => {
         match_count_editable += highlightWithin(editable, re, true);
         match_count_code += matchCount(editable.innerHTML.normalize("NFKD"), re);
-        if (code_mirror) {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re, true);
-        }
     })
+    highlightOverlaps();
+
+
+    if (code_mirror) {
+        ranges = new Map();
+        terms['normal'].forEach(re => {
+            highlightWithin(code_mirror.closest('.CodeMirror'), re);
+        })
+        terms['regex'].forEach(re => {
+            highlightWithin(code_mirror.closest('.CodeMirror'), re);
+        });
+        terms['noncomb'].forEach(re => {
+            highlightWithin(code_mirror.closest('.CodeMirror'), re, true);
+        });
+        highlightOverlaps();
+    }
 
     // Let's not try to do unnecessary work
     if (match_count_code + match_count_editable == 0) {
@@ -380,6 +440,11 @@ function unhighlightField(container) {
     CSS.highlights.get('match').forEach(hl => {
         if (hl.owner == container) {
             CSS.highlights.get('match').delete(hl);
+        }
+    })
+    CSS.highlights.get('overlap').forEach(hl => {
+        if (hl.owner == container) {
+            CSS.highlights.get('overlap').delete(hl);
         }
     })
 }

@@ -2,6 +2,10 @@
   background-color: #ffe500;
   color: #121212;
 }
+::highlight(overlap) {
+  background-color: #ffe5ff;
+  color: #551212;
+}
 
 .night_mode ::highlight(match), .night_mode ::highlight(tag) {
   background-color: #fff068;
