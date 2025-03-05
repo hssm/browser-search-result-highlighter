@@ -170,6 +170,8 @@ function parseTerms() {
     function compile_noncombs(terms) {
         let out = [];
         terms.forEach(term => {
+            // Anki escapes spaces in quoted terms. This breaks our regex, so unquote it.
+            term = term.replace('\\ ', ' ');
             if (term.length == 0 || term == ".*") {
                 return;
             }
