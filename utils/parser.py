@@ -78,7 +78,15 @@ def parse_nodes(search):
                 if idx == len(search) - 1:
                     # Capture started at end of string (single char term). Force capture.
                     terms.append(search[start:idx+1])
-    return terms
+
+    # Remove duplicates before returning. Preserve order for easier debugging.
+    seen = set()
+    out = []
+    for term in terms:
+        if term not in seen:
+            seen.add(term)
+            out.append(term)
+    return out
 
 
 # Pick out only the terms that result in a search of field string content.
@@ -228,11 +236,12 @@ if __name__ == "__main__":
               're:a OR (re:Ab re:Cd) '
               'nc:x OR (nc:Yz nc:Vw) '
               '"animal front:long text"')
-    # search = '"re:(?-i)aBCdeF"'
-    # search = '"animal front:long text" aAa "re:(?-i)aBCdeF"'
+    search = '"re:(?-i)aBCdeF"'
+    search = '"animal front:long text" aAa "re:(?-i)aBCdeF"'
     search = "fro*:cat *ont:cat f*nt:cat fr_nt:cat F___T:cAt back\\__\\front:cat"
     search = r"back\\__\\front:cat back\\to\\___\\future"
     search = r"back\*\\___\\future"
+    search = "cat dog cat (cat or dog) nc:cat nc:dog tag:cat tag:cat front:cat front:dog front:cat"
 
 
     print("Nodes:")
