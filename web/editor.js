@@ -381,7 +381,7 @@ function highlightField(container, minimap_now = true) {
 
     let code = editable.innerHTML;
     if (code.endsWith('<br>')) {
-        code = code.substring(0, code.length-5);
+        code = code.substring(0, code.length-4);
     }
     terms['normal'].forEach(re => {
         match_count_editable += highlightWithin(editable, re);
