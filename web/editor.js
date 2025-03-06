@@ -383,6 +383,11 @@ function highlightField(container, minimap_now = true) {
     if (code.endsWith('<br>')) {
         code = code.substring(0, code.length-4);
     }
+    code = code.replace(/(<img.*src=")(.*)(">)/g, function(match, pre, src, post) {
+        src = src.replaceAll("%20", ' ');
+        return pre+src+post;
+    })
+
     terms['normal'].forEach(re => {
         match_count_editable += highlightWithin(editable, re);
         match_count_code += matchCount(code, re);
