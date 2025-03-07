@@ -291,22 +291,50 @@ function highlightField(container, minimap_now = true) {
     // Track ranges to find overlaps
     let ranges = new Map();
 
-    function highlightWithin(node, regex, normalize=false) {
+    function highlightWithin(node, regex, normalize=false, p20s=new Set()) {
         let match_count = 0;
         function highlightWithinInner(node) {
             if (node.nodeType === Node.TEXT_NODE) {
+                let p20_offsets = [];
                 let data = node.data;
                 if (normalize) {
                     data = data.normalize("NFKD").replace(/\p{M}/gu, '');
                 }
+
+                if (p20s.has(data)) {
+                    // This is the portion of the code block that contains an image src with
+                    // a %20 in its filename. We convert the %20 to a space and keep a record
+                    // of the index where it happened
+                    data = data.replaceAll("%20", function(m, offset) {
+                        p20_offsets.push(offset);
+                        return ' '
+                    });
+                }
                 let matches = [...data.matchAll(regex)];
                 matches.forEach((match) => {
+                    // A lot of work for an edge case! If we have matches on a node that has
+                    // had %20s converted to spaces, we account for the excess distance we need
+                    // to travel in the original text to correctly cover the match
+                    p20_offset_start = 0;
+                    p20_offset_end = 0;
+                    p20_offsets.forEach((n) => {
+                        // Do we start after this %20?
+                        if (n < match.index + p20_offset_start) {
+                            p20_offset_start += 2;
+                        }
+                        // Does the match itself contain this %20 within it?
+                        if (n >= match.index + p20_offset_start &&
+                            n < match.index + p20_offset_start + match[0].length + p20_offset_end) {
+                            p20_offset_end += 2
+                        }
+                    })
+
                     match_count++;
                     let r = new StaticRange({
                         'startContainer': node,
                         'endContainer': node,
-                        'startOffset': match.index,
-                        'endOffset': match.index + match[0].length
+                        'startOffset': p20_offset_start + match.index,
+                        'endOffset': p20_offset_start + match.index + match[0].length + p20_offset_end
                     });
                     r.owner = container;
                     CSS.highlights.get('match').add(r);
@@ -379,12 +407,21 @@ function highlightField(container, minimap_now = true) {
     let match_count_editable = 0;
     let match_count_code = 0;
 
+    // Code has a superfluous <br> at the end which can cause false positives. Remove it
     let code = editable.innerHTML;
     if (code.endsWith('<br>')) {
         code = code.substring(0, code.length-4);
     }
+
+    // The code view converts spaces within image src to %20. Convert them back, because
+    // Anki is matching on the space. Keep a record of any file names that were converted - we
+    // use them later to reposition highlights because the string length becomes different.
+    let p20s = new Set();
     code = code.replace(/(<img.*src=")(.*)(">)/g, function(match, pre, src, post) {
-        src = src.replaceAll("%20", ' ');
+        src = src.replaceAll("%20", function(m) {
+            p20s.add('"'+src+'"');
+            return ' '
+        });
         return pre+src+post;
     })
 
@@ -397,7 +434,7 @@ function highlightField(container, minimap_now = true) {
         match_count_code += matchCount(code, re);
     })
     terms['noncomb'].forEach(re => {
-        match_count_editable += highlightWithin(editable, re, true);
+        match_count_editable += highlightWithin(editable, re, normalize=true);
         match_count_code += matchCount(code.normalize("NFKD"), re);
     })
     highlightOverlaps();
@@ -406,13 +443,13 @@ function highlightField(container, minimap_now = true) {
     if (code_mirror) {
         ranges = new Map();
         terms['normal'].forEach(re => {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re);
+            highlightWithin(code_mirror.closest('.CodeMirror'), re, normalize=false, p20s=p20s);
         })
         terms['regex'].forEach(re => {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re);
+            highlightWithin(code_mirror.closest('.CodeMirror'), re, normalize=false, p20s=p20s);
         });
         terms['noncomb'].forEach(re => {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re, true);
+            highlightWithin(code_mirror.closest('.CodeMirror'), re, normalize=true, p20s=p20s);
         });
         highlightOverlaps();
     }
