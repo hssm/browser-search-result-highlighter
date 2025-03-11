@@ -290,8 +290,10 @@ function highlightField(container, minimap_now = true) {
 
     // Track ranges to find overlaps
     let ranges = new Map();
+    // Track %20 positions
+    let p20s = new Set();
 
-    function highlightWithin(node, regex, normalize=false, p20s=new Set()) {
+    function highlightWithin(node, regex, normalize=false) {
         let match_count = 0;
         function highlightWithinInner(node) {
             if (node.nodeType === Node.TEXT_NODE) {
@@ -416,7 +418,7 @@ function highlightField(container, minimap_now = true) {
     // The code view converts spaces within image src to %20. Convert them back, because
     // Anki is matching on the space. Keep a record of any file names that were converted - we
     // use them later to reposition highlights because the string length becomes different.
-    let p20s = new Set();
+
     code = code.replace(/(<img.*src=")(.*)(">)/g, function(match, pre, src, post) {
         src = src.replaceAll("%20", function(m) {
             p20s.add('"'+src+'"');
@@ -443,13 +445,13 @@ function highlightField(container, minimap_now = true) {
     if (code_mirror) {
         ranges = new Map();
         terms['normal'].forEach(re => {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re, normalize=false, p20s=p20s);
+            highlightWithin(code_mirror.closest('.CodeMirror'), re, normalize=false);
         })
         terms['regex'].forEach(re => {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re, normalize=false, p20s=p20s);
+            highlightWithin(code_mirror.closest('.CodeMirror'), re, normalize=false);
         });
         terms['noncomb'].forEach(re => {
-            highlightWithin(code_mirror.closest('.CodeMirror'), re, normalize=true, p20s=p20s);
+            highlightWithin(code_mirror.closest('.CodeMirror'), re, normalize=true);
         });
         highlightOverlaps();
     }
