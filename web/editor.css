@@ -1,21 +1,34 @@
+:root {
+  --bsrh-light-background: #ffe500;
+  --bsrh-light-foreground: #121212;
+  --bsrh-light-overlap: #ffca00;
+  --bsrh-light-match-position: #b79800;
+
+  --bsrh-dark-background: #fff068;
+  --bsrh-dark-foreground: #121212;
+  --bsrh-dark-overlap: #e8b907;
+  --bsrh-dark-match-position: #c5b204;
+}
+
 ::highlight(match), ::highlight(tag) {
-  background-color: #ffe500;
-  color: #121212;
+  background-color: var(--bsrh-light-background);
+  color: var(--bsrh-light-foreground);
 }
 ::highlight(overlap) {
-  background-color: #ffca00;
+  background-color: var(--bsrh-light-overlap);
 }
 
 .night_mode ::highlight(match), .night_mode ::highlight(tag) {
-  background-color: #fff068;
-  color: #121212;
+  background-color: var(--bsrh-dark-background);
+  color: var(--bsrh-dark-foreground);
 }
 .night_mode ::highlight(overlap) {
-  background-color: #e8b907;
+  background-color: var(--bsrh-dark-overlap);
 }
 
 /* UI Controls */
 .bsrh-controls {
+  position: relative;
   display: flex;
   color: #666;
   font-size: 14px;
@@ -78,13 +91,34 @@
 }
 .bsrh-controls .settings {
   margin-left: 1em;
-  display: none;
 }
 .bsrh-controls .settings span {
   --icon-size: 65% !important;
   vertical-align: -webkit-baseline-middle;
   cursor: pointer;
   bottom: 1px;
+}
+/* Settings */
+#bsrh-settings {
+    position: absolute;
+    z-index: 99;
+    background: white;
+    right: 0;
+    top: 30px;
+    padding: 8px;
+    border-radius: 4px;
+    width: 100%;
+}
+#bsrh-settings::after {
+    /* The arrow */
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: auto;
+    right: 8px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent white transparent;
 }
 
 /* Code button */
@@ -115,10 +149,10 @@
   position: absolute;
   width: 100%;
   height: 2px;
-  background-color: #b79800;
+  background-color: var(--bsrh-light-match-position);
 }
 .night_mode .match-position {
-  background-color: #c5b204;
+  background-color: var(--bsrh-dark-match-position);
 }
 .scroll-area {
   scrollbar-gutter: stable

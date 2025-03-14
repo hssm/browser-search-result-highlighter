@@ -76,8 +76,15 @@ let controls =
       <span class='tag-count-holder'>Tags: <span>0</span></span>
       <span class="separator">❘</span>
       <span class='auto-state-holder'>Scroll:&nbsp; <span onclick='onAuto()'>Off</span></span>
-      <span class="settings"></span>
+      <span class="settings" onclick='openSettings()'></span>
     </span>
+    <div id='bsrh-settings' style='display: none;'>
+        <button id='bsrh-tab-general' onclick='showTabGeneral()'>General</button>
+        <button id='bsrh-tab-colors' onclick='showTabColors()'>Colors</button>
+        <div id='bsrh-settings-general'>general settings here!</div>
+        <div id='bsrh-settings-colors' style='display: none;'>color settings here!</div>
+        <button id='bsrh-settings-close' onclick='closeSettings()'>Close</button>
+    </div>
 </div>
 `
 
@@ -418,7 +425,6 @@ function highlightField(container, minimap_now = true) {
     // The code view converts spaces within image src to %20. Convert them back, because
     // Anki is matching on the space. Keep a record of any file names that were converted - we
     // use them later to reposition highlights because the string length becomes different.
-
     code = code.replace(/(<img.*src=")(.*)(">)/g, function(match, pre, src, post) {
         src = src.replaceAll("%20", function(m) {
             p20s.add('"'+src+'"');
@@ -618,13 +624,6 @@ function highlightTags() {
     });
 }
 
-// UI controls
-function onAuto(event) {
-  auto_scroll = !auto_scroll;
-  pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
-  updateControls();
-}
-
 function scrollToMatch() {
     let target = scroll_to;
     // The positioning code resembles the minimap notch positioning, but tweaked
@@ -649,4 +648,27 @@ function scrollToMatch() {
     let pos = fromtop-tb;
     let centered = pos - (scrollarea.clientHeight / 2);
     scrollarea.scrollTo(0, centered);
+}
+
+// UI controls
+function onAuto(event) {
+    auto_scroll = !auto_scroll;
+    pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
+    updateControls();
+}
+
+function openSettings() {
+    document.getElementById('bsrh-settings').style.display = 'block';
+}
+function closeSettings() {
+    document.getElementById('bsrh-settings').style.display = 'none';
+}
+
+function showTabGeneral() {
+    document.getElementById('bsrh-settings-general').style.display = 'block';
+    document.getElementById('bsrh-settings-colors').style.display = 'none';
+}
+function showTabColors() {
+    document.getElementById('bsrh-settings-general').style.display = 'none';
+    document.getElementById('bsrh-settings-colors').style.display = 'block';
 }
