@@ -14,6 +14,18 @@ import base64
 from .utils.parser import parse_search
 
 addon_package = mw.addonManager.addon_from_module(__name__)
+default_settings = [
+    ('auto', True),
+    # Rely on CSS for defaults
+    ('light-background', None),
+    ('light-foreground', None),
+    ('light-overlap', None),
+    ('light-match-position', None),
+    ('dark-background', None),
+    ('dark-foreground', None),
+    ('dark-overlap', None),
+    ('dark-match-position', None),
+]
 
 class BrowserSearchResultHighlighter:
     def __init__(self, mw):
@@ -21,9 +33,16 @@ class BrowserSearchResultHighlighter:
         self.filter_terms = []
 
     def editor_init(self, editor):
-        config = mw.col.get_config('bsrh', {'auto': True})
-        auto = json.dumps(config['auto'])
-        editor.web.eval(f"addControls({auto})")
+        config = mw.col.get_config('bsrh', {})
+        config = self.set_config_defaults(config)
+        config = json.dumps(config)
+        editor.web.eval(f"addControls({config})")
+
+    def set_config_defaults(self, config):
+        for setting, default in default_settings:
+            if setting not in config:
+                config[setting] = default
+        return config
 
     def browser_will_show(self, browser):
         self.browser = browser
@@ -56,12 +75,14 @@ class BrowserSearchResultHighlighter:
     def on_js_message(self, handled, message, context):
         if not message.startswith('BSRH:'):
             return handled
-
-        vals = json.loads(message[5:])
-        config = mw.col.get_config('bsrh', dict())
-        config['auto'] = vals['auto']
-        mw.col.set_config('bsrh', config)
+        self.save_config(json.loads(message[5:]))
         return True, None
+
+    def save_config(self, new):
+        config = mw.col.get_config('bsrh', dict())
+        for (key, _) in default_settings:
+            config[key] = new[key]
+        mw.col.set_config('bsrh', config)
 
 mw.addonManager.setWebExports(__name__, r"web/.*")
 bsrh = BrowserSearchResultHighlighter(mw)

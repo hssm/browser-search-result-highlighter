@@ -11,8 +11,8 @@ let res = null;
 // First match found to scroll to
 let scroll_to = null;
 
-// Scroll to first match: user toggleable
-let auto_scroll = false;
+// User settings from python. Assumes default values pre-populated.
+let settings = {};
 
 // Number of matches total
 let matched_total = 0;
@@ -56,7 +56,7 @@ const resizeObserver = new ResizeObserver(entries => {
   for (let entry of entries) {
     fillMinimap();
 
-    if (auto_scroll && scroll_to) {
+    if (settings['auto'] && scroll_to) {
         scrollToMatch();
     }
   }
@@ -81,8 +81,65 @@ let controls =
     <div id='bsrh-settings' style='display: none;'>
         <button id='bsrh-tab-general' onclick='showTabGeneral()'>General</button>
         <button id='bsrh-tab-colors' onclick='showTabColors()'>Colors</button>
-        <div id='bsrh-settings-general'>general settings here!</div>
-        <div id='bsrh-settings-colors' style='display: none;'>color settings here!</div>
+
+        <div id='bsrh-settings-general'>
+            general settings here!
+        </div>
+
+        <div id='bsrh-settings-colors' style='display: none;'>
+            <button id='bsrh-tab-light' onclick='showTabLight()'>Light</button>
+            <button id='bsrh-tab-dark' onclick='showTabDark()'>Dark</button>
+            <button id='bsrh-tab-presets' onclick='showTabPresets()'>Presets</button>
+
+            <div id='bsrh-settings-light'>
+                <div class='bsrh-settings-row'>
+                    <span>Background:</span>
+                    <input id='bsrh-light-background'
+                        type='color' value="#555555" oninput='onColorChanged(this)'/>
+                </div>
+                <div class='bsrh-settings-row'>
+                    <span>Foreground:</span>
+                    <input id='bsrh-light-foreground'
+                        type='color' value="#555555" oninput='onColorChanged(this)'/>
+                </div>
+                <div class='bsrh-settings-row'>
+                    <span>Overlap:</span>
+                    <input id='bsrh-light-overlap'
+                        type='color' value="#555555" oninput='onColorChanged(this)'/>
+                </div>
+                <div class='bsrh-settings-row'>
+                    <span>Scrollbar:</span>
+                    <input id='bsrh-light-match-position'
+                        type='color' value="#555555" oninput='onColorChanged(this)'/>
+                </div>
+            </div>
+            <div id='bsrh-settings-dark'>
+                <div class='bsrh-settings-row'>
+                    <span>Background:</span>
+                    <input id='bsrh-dark-background'
+                        type='color' value="#555555" oninput='onColorChanged(this)'/>
+                </div>
+                <div class='bsrh-settings-row'>
+                    <span>Foreground:</span>
+                    <input id='bsrh-dark-foreground'
+                        type='color' value="#555555" oninput='onColorChanged(this)'/>
+                </div>
+                <div class='bsrh-settings-row'>
+                    <span>Overlap:</span>
+                    <input id='bsrh-dark-overlap'
+                        type='color' value="#555555" oninput='onColorChanged(this)'/>
+                </div>
+                <div class='bsrh-settings-row'>
+                    <span>Scrollbar:</span>
+                    <input id='bsrh-dark-match-position'
+                        type='color' value="#555555" oninput='onColorChanged(this)'/>
+                </div>
+            </div>
+            <div id='bsrh-settings-presets'>
+                preset
+            </div>
+        </div>
+
         <button id='bsrh-settings-close' onclick='closeSettings()'>Close</button>
     </div>
 </div>
@@ -93,16 +150,18 @@ let scrollarea = null;
 let fieldarea = null;
 let toolbar = null;
 
-function addControls(auto) {
-    auto_scroll = auto;
+function addControls(_settings) {
+    settings = _settings
 
     // First load has a race condition. Keep trying until element appears.
     let _toolbar = document.querySelector('div[role="toolbar"]');
     if (!_toolbar) {
-        setTimeout(() => {addControls(auto)}, 20)
+        setTimeout(() => {addControls(settings)}, 20)
         return;
     }
     _toolbar.insertAdjacentHTML("beforeend", controls);
+
+    apply_settings();
 
     // Steal the cog icon and shove it into our own settings button
     let cog = document.querySelector('.floating-reference button span').cloneNode(true);
@@ -125,6 +184,35 @@ function addControls(auto) {
     toolbar = document.querySelector('.editor-toolbar');
 }
 
+function apply_settings() {
+    // Colors
+    let root = document.querySelector(':root');
+    let rs = getComputedStyle(root);
+    const colors = [
+        'light-background',
+        'light-foreground',
+        'light-overlap',
+        'light-match-position',
+        'dark-background',
+        'dark-foreground',
+        'dark-overlap',
+        'dark-match-position'
+    ];
+    colors.forEach(name => {
+        value = settings[name]
+        css_name = '--bsrh-'+name;
+        element_name = 'bsrh-'+name;
+        if (value) {
+            root.style.setProperty(css_name , value);
+            // Also set the input field's value
+            document.getElementById(element_name).value = value;
+        } else {
+            // Use the CSS value as the default color of the input field
+            document.getElementById(element_name).value = rs.getPropertyValue(css_name);
+        }
+    })
+}
+
 function updateControls() {
     let c = document.querySelector('.bsrh-controls');
 
@@ -144,8 +232,8 @@ function updateControls() {
     c.querySelector('.tag-count-holder span').innerHTML = matched_tags;
 
     // Auto-scroll
-    c.querySelector('.auto-state-holder').setAttribute('matched', auto_scroll);
-    c.querySelector('.auto-state-holder span').innerHTML = auto_scroll ? 'On' : 'Off';
+    c.querySelector('.auto-state-holder').setAttribute('matched', settings['auto']);
+    c.querySelector('.auto-state-holder span').innerHTML = settings['auto'] ? 'On' : 'Off';
 }
 
 // Consume the python payload containing the search terms
@@ -252,7 +340,7 @@ function beginHighlighter() {
     // Update UI after matching done
     updateControls();
     fillMinimap();
-    if (auto_scroll && scroll_to) {
+    if (settings['auto'] && scroll_to) {
         // Here's how this is going to work. We scroll to the element immediately.
         scrollToMatch();
 
@@ -652,9 +740,13 @@ function scrollToMatch() {
 
 // UI controls
 function onAuto(event) {
-    auto_scroll = !auto_scroll;
-    pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
+    settings['auto'] = !settings['auto']
+    saveSettings();
     updateControls();
+}
+
+function saveSettings() {
+    pycmd('BSRH:' + JSON.stringify(settings));
 }
 
 function openSettings() {
@@ -671,4 +763,50 @@ function showTabGeneral() {
 function showTabColors() {
     document.getElementById('bsrh-settings-general').style.display = 'none';
     document.getElementById('bsrh-settings-colors').style.display = 'block';
+}
+function showTabPresets() {
+    document.getElementById('bsrh-settings-general').style.display = 'none';
+    document.getElementById('bsrh-settings-colors').style.display = 'none';
+}
+function showTabLight() {
+    document.getElementById('bsrh-settings-light').style.display = 'block';
+    document.getElementById('bsrh-settings-dark').style.display = 'none';
+    document.getElementById('bsrh-settings-presets').style.display = 'none';
+}
+function showTabDark() {
+    document.getElementById('bsrh-settings-light').style.display = 'none';
+    document.getElementById('bsrh-settings-dark').style.display = 'block';
+    document.getElementById('bsrh-settings-presets').style.display = 'none';
+}
+function showTabPresets() {
+    document.getElementById('bsrh-settings-light').style.display = 'none';
+    document.getElementById('bsrh-settings-dark').style.display = 'none';
+    document.getElementById('bsrh-settings-presets').style.display = 'block';
+}
+
+function onColorChanged(target) {
+    var root = document.querySelector(':root');
+    const colors = [
+        'bsrh-light-background',
+        'bsrh-light-foreground',
+        'bsrh-light-overlap',
+        'bsrh-light-match-position',
+        'bsrh-dark-background',
+        'bsrh-dark-foreground',
+        'bsrh-dark-overlap',
+        'bsrh-dark-match-position'
+    ];
+
+    for (let i = 0; i < colors.length; i++) {
+        let name = colors[i];
+        if (name != target.id) {
+            continue;
+        }
+        root.style.setProperty('--'+name , target.value);
+
+        // Save setting
+        settings[name.substr(5, name.length)] = target.value;
+        saveSettings();
+        return;
+    }
 }

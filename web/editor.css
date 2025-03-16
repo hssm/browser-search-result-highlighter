@@ -98,40 +98,22 @@
   cursor: pointer;
   bottom: 1px;
 }
-/* Settings */
-#bsrh-settings {
-    position: absolute;
-    z-index: 99;
-    background: white;
-    right: 0;
-    top: 30px;
-    padding: 8px;
-    border-radius: 4px;
-    width: 100%;
-}
-#bsrh-settings::after {
-    /* The arrow */
-    content: "";
-    position: absolute;
-    bottom: 100%;
-    left: auto;
-    right: 8px;
-    border-width: 6px;
-    border-style: solid;
-    border-color: transparent transparent white transparent;
-}
 
 /* Code button */
 .field-container[bsrh-moreincode=true] .plain-text-badge {
   opacity: 1 !important;
 }
 .field-container[bsrh-moreincode=true] .plain-text-badge button > span {
-  outline: 2px dashed #a6a070;
-  background: #ffe500;
+  outline: 1px dashed var(--bsrh-light-foreground);
+  outline-offset: -1px;
+  background: var(--bsrh-light-background);
+  color: var(--bsrh-light-foreground);
 }
 .night_mode .field-container[bsrh-moreincode=true] .plain-text-badge button > span {
-  outline: 2px dashed #fff068;
-  background: unset;
+  outline: 1px dashed var(--bsrh-dark-foreground);
+  outline-offset: -1px;
+  background: var(--bsrh-dark-background);
+  color: var(--bsrh-dark-foreground);
 }
 
 /* Minimap */
@@ -156,4 +138,27 @@
 }
 .scroll-area {
   scrollbar-gutter: stable
+}
+
+/* Settings */
+#bsrh-settings {
+    position: absolute;
+    z-index: 99;
+    background: white;
+    right: 0;
+    top: 30px;
+    padding: 8px;
+    border-radius: 4px;
+    width: 100%;
+}
+#bsrh-settings::after {
+    /* The arrow */
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: auto;
+    right: 8px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent white transparent;
 }
