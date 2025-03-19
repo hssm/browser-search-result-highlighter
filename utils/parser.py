@@ -183,7 +183,7 @@ def replace_special(term):
 def replace_special_tags(term, regex=False):
     if not regex:
         term = term.replace('*', '.*')
-    term = term.replace('::', '∷')
+        term = term.replace('_', '.')
     return term
 
 
@@ -243,6 +243,7 @@ if __name__ == "__main__":
     search = r"back\*\\___\\future"
     search = "cat dog cat (cat or dog) nc:cat nc:dog tag:cat tag:cat front:cat front:dog front:cat"
     search = '"quoted term" "nc:with quotes" "front:a dog"'
+    search = "tag:_ag tag:*og"
 
 
     print("Nodes:")
