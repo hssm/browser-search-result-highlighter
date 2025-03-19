@@ -4,10 +4,6 @@ let terms_str = null;
 // Parsed in javascript
 let terms_parsed = null;
 
-// Dictionary of regexes to find matches per field. Index is field name.
-// The empty string key is applicable to all fields.
-let res = null;
-
 // First match found to scroll to
 let scroll_to = null;
 
@@ -192,7 +188,13 @@ function addControls(_settings) {
     positioner.setAttribute('position', settings['position']);
     positioner.setAttribute('alignment', settings['alignment']);
 
-    apply_settings();
+    // Settings menu inputs
+    document.getElementById('bsrh-position').value = settings['position'];
+    document.getElementById('bsrh-alignment').value = settings['alignment'];
+    document.getElementById('bsrh-nofocus').checked = settings['nofocus'];
+    document.getElementById('bsrh-minimap').checked = settings['minimap'];
+
+    loadUserColors();
 
     // Steal the cog icon and shove it into our own settings button
     let cog = document.querySelector('.floating-reference button span').cloneNode(true);
@@ -219,8 +221,7 @@ function addControls(_settings) {
     }
 }
 
-function apply_settings() {
-    // Colors
+function loadUserColors() {
     let root = document.querySelector(':root');
     let rs = getComputedStyle(root);
     const colors = [
@@ -246,10 +247,6 @@ function apply_settings() {
             document.getElementById(element_name).value = rs.getPropertyValue(css_name);
         }
     })
-    document.getElementById('bsrh-position').value = settings['position'];
-    document.getElementById('bsrh-alignment').value = settings['alignment'];
-    document.getElementById('bsrh-nofocus').checked = settings['nofocus'];
-    document.getElementById('bsrh-minimap').checked = settings['minimap'];
 }
 
 function updateControls() {
@@ -281,7 +278,7 @@ function parseTerms() {
 
     // Pre-compile all the regexs for better performance and ignore match-none/match-all cases.
 
-    function compile_normals(terms) {
+    function compileNormals(terms) {
         let out = [];
         terms.forEach(term => {
             if (term.length == 0 || term == ".*") {
@@ -291,7 +288,7 @@ function parseTerms() {
         })
         return out;
     }
-    function compile_regexes(terms) {
+    function compileRegexes(terms) {
         let out = [];
         terms.forEach(term => {
             if (term['term'].length == 0 || term['term'] == ".*") {
@@ -301,7 +298,7 @@ function parseTerms() {
         })
         return out;
     }
-    function compile_noncombs(terms) {
+    function compileNoncombs(terms) {
         let out = [];
         terms.forEach(term => {
             // Anki escapes spaces in quoted terms. This breaks our regex, so unquote it.
@@ -320,13 +317,13 @@ function parseTerms() {
         })
         return out;
     }
-    function compile_fields(fields) {
+    function compileFields(fields) {
         let out = [];
         fields.forEach(field => {
             field['terms'] = {
-                'normal': compile_normals(field['terms']['normal']),
-                'regex' : compile_regexes(field['terms']['regex']),
-                'noncomb': compile_noncombs(field['terms']['noncomb'])
+                'normal': compileNormals(field['terms']['normal']),
+                'regex' : compileRegexes(field['terms']['regex']),
+                'noncomb': compileNoncombs(field['terms']['noncomb'])
             }
             out.push(field);
         })
@@ -334,10 +331,10 @@ function parseTerms() {
     }
 
     terms_parsed = {
-        'normal':  compile_normals(payload['normal']),
-        'regex': compile_regexes(payload['regex']),
-        'noncomb': compile_noncombs(payload['noncomb']),
-        'fields': compile_fields(payload['fields']),
+        'normal':  compileNormals(payload['normal']),
+        'regex': compileRegexes(payload['regex']),
+        'noncomb': compileNoncombs(payload['noncomb']),
+        'fields': compileFields(payload['fields']),
         'tags': payload['tags']
     };
 }
