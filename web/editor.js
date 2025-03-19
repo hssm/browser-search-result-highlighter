@@ -20,42 +20,41 @@ let matched_fields = 0;
 let matched_tags = 0;
 
 const matchCount = (str, re) => {
-  return str?.match(re)?.length ?? 0;
+    return str?.match(re)?.length ?? 0;
 };
 
 // Observer to detect code button/shortcut
 const watch = (mutations, observer) => {
     for (let i = 0; i < mutations.length; i++) {
-      let mutation = mutations[i];
-      if (mutation.addedNodes.length > 0) {
-        try {
-          let node = mutation.addedNodes[0];
-          if (node.classList.contains('CodeMirror-line')) {
-            let field_root = node.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
-            let code_mirror = field_root.host.closest('.editing-area').querySelector('.CodeMirror textarea');
+        let mutation = mutations[i];
+        if (mutation.addedNodes.length > 0) {
+            try {
+                let node = mutation.addedNodes[0];
+                if (node.classList.contains('CodeMirror-line')) {
+                    let field_root = node.closest('.editing-area').querySelector('.rich-text-editable').shadowRoot;
+                    let code_mirror = field_root.host.closest('.editing-area').querySelector('.CodeMirror textarea');
 
-            observer.disconnect();
-            code_mirror.addEventListener('focus', codeOnFocus);
-            code_mirror.addEventListener('blur', codeOnBlur);
-            break;
-          }
-        } catch (error) {
-          // A more precise solution is not worth the effort.
+                    observer.disconnect();
+                    code_mirror.addEventListener('focus', codeOnFocus);
+                    code_mirror.addEventListener('blur', codeOnBlur);
+                    break;
+                }
+            } catch (error) {
+                // A more precise solution is not worth the effort.
+            }
         }
-      }
     }
 }
 let observers = [];
 
 // Observer to detect field area size changes to re-calculate minimap positions
 const resizeObserver = new ResizeObserver(entries => {
-  for (let entry of entries) {
-    fillMinimap();
-
-    if (settings['auto'] && scroll_to) {
-        scrollToMatch();
+    for (let entry of entries) {
+        fillMinimap();
+        if (settings['auto'] && scroll_to) {
+            scrollToMatch();
+        }
     }
-  }
 });
 
 // UI controls
@@ -310,8 +309,8 @@ function parseTerms() {
             let regex_build = [];
             regex_build.push('\\p{M}*');
             for (let i = 0; i < search.length; i++) {
-              regex_build.push(search[i]);
-              regex_build.push('\\p{M}*');
+                regex_build.push(search[i]);
+                regex_build.push('\\p{M}*');
             }
             out.push(new RegExp(regex_build.join(''), 'giu'));
         })
@@ -352,7 +351,7 @@ function beginHighlighter() {
     matched_tags = 0;
     let containers = document.querySelectorAll('.field-container');
     if (containers.length == 0) {
-      return;
+        return;
     }
     containers.forEach((c) => { unhighlightCodeExpander(c); })
     minimap.innerHTML = '';
@@ -368,9 +367,9 @@ function beginHighlighter() {
     observers.forEach((o) => { o.disconnect(); })
     observers = [];
     containers.forEach((c) => {
-      let observer = new MutationObserver(watch);
-      observers.push(observer);
-      observer.observe(c, {childList: true, subtree: true});
+        let observer = new MutationObserver(watch);
+        observers.push(observer);
+        observer.observe(c, {childList: true, subtree: true});
     })
 
     // Update UI after matching done
@@ -631,7 +630,7 @@ function unhighlightField(container) {
 
 function fillMinimap() {
     if (!settings['minimap']) {
-      return;
+        return;
     }
     // If the field area is too small to generate a scroll bar, we cap the height of the minimap in the
     // positioning calculation to match it. This gives us precise notch positioning when there's no scrolling.
@@ -654,12 +653,12 @@ function fillMinimap() {
         let range = document.createRange();
 
         if (target instanceof StaticRange) {
-          // Is a highlighter entry. We have exact range.
-          range.setStart(target.startContainer, target.startOffset);
-          range.setEnd(target.endContainer, target.endOffset);
+            // Is a highlighter entry. We have exact range.
+            range.setStart(target.startContainer, target.startOffset);
+            range.setEnd(target.endContainer, target.endOffset);
         } else {
-          // Is a code button. Can select whole thing.
-          range.selectNodeContents(target);
+            // Is a code button. Can select whole thing.
+            range.selectNodeContents(target);
         }
 
         let rect = range.getClientRects()[0];
@@ -678,7 +677,7 @@ function fillMinimap() {
     }
     CSS.highlights.get('match').forEach(hl => addNotch(hl));
     document.querySelectorAll(".field-container[bsrh-moreincode=true").forEach(container => {
-      addNotch(container.querySelector('.plain-text-badge button > span'));
+        addNotch(container.querySelector('.plain-text-badge button > span'));
     });
 
     minimap.innerHTML = '';
@@ -686,43 +685,43 @@ function fillMinimap() {
 }
 
 function editableOnFocus(event) {
-  if (settings['nofocus']) {
-      let editable = event.currentTarget;
-      let container = editable.parentNode.host.closest('.field-container');
-      unhighlightField(container);
-  }
+    if (settings['nofocus']) {
+        let editable = event.currentTarget;
+        let container = editable.parentNode.host.closest('.field-container');
+        unhighlightField(container);
+    }
 }
 
 function editableOnBlur(event) {
-  let editable = event.currentTarget;
-  let container = editable.parentNode.host.closest('.field-container');
-  highlightField(container);
+    let editable = event.currentTarget;
+    let container = editable.parentNode.host.closest('.field-container');
+    highlightField(container);
 }
 
 function codeOnFocus(event) {
-  let code_mirror = event.currentTarget;
-  let container = code_mirror.closest('.field-container');
-  if (container.hasAttribute('bsrh-moreincode')) {
-    // Seems to be a race condition? This makes it work
-    setTimeout(() => {
-      highlightField(container);
-      fillMinimap();
-    }, 0)
-  } else {
-    setTimeout(() => {
-      // Highlight the field to fill out the minimap with the new matches before removing
-      highlightField(container);
-      if (settings['nofocus']) {
-        unhighlightField(container);
-      }
-    }, 0)
-  }
+    let code_mirror = event.currentTarget;
+    let container = code_mirror.closest('.field-container');
+    if (container.hasAttribute('bsrh-moreincode')) {
+        // Seems to be a race condition? This makes it work
+        setTimeout(() => {
+            highlightField(container);
+            fillMinimap();
+        }, 0)
+    } else {
+        setTimeout(() => {
+            // Highlight the field to fill out the minimap with the new matches before removing
+            highlightField(container);
+            if (settings['nofocus']) {
+                unhighlightField(container);
+            }
+        }, 0)
+    }
 }
 
 function codeOnBlur(event) {
-  let code_mirror = event.currentTarget;
-  let container = code_mirror.closest('.field-container');
-  highlightField(container);
+    let code_mirror = event.currentTarget;
+    let container = code_mirror.closest('.field-container');
+    highlightField(container);
 }
 
 function highlightCodeExpander(container) {
@@ -767,10 +766,10 @@ function scrollToMatch() {
 
     let range = document.createRange();
     if (target instanceof StaticRange) {
-      range.setStart(target.startContainer, target.startOffset);
-      range.setEnd(target.endContainer, target.endOffset);
+        range.setStart(target.startContainer, target.startOffset);
+        range.setEnd(target.endContainer, target.endOffset);
     } else {
-      range.selectNodeContents(target);
+        range.selectNodeContents(target);
     }
     let rect = range.getClientRects()[0];
     if (rect == null) {return}
