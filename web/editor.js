@@ -11,8 +11,8 @@ let res = null;
 // First match found to scroll to
 let scroll_to = null;
 
-// Scroll to first match: user toggleable
-let auto_scroll = false;
+// User settings from python. Assumes default values pre-populated.
+let settings = {};
 
 // Number of matches total
 let matched_total = 0;
@@ -56,7 +56,7 @@ const resizeObserver = new ResizeObserver(entries => {
   for (let entry of entries) {
     fillMinimap();
 
-    if (auto_scroll && scroll_to) {
+    if (settings['auto'] && scroll_to) {
         scrollToMatch();
     }
   }
@@ -65,7 +65,7 @@ const resizeObserver = new ResizeObserver(entries => {
 // UI controls
 let controls =
 `
-<div class="bsrh-controls">
+<div id="bsrh-controls-positioner"><div class="bsrh-controls">
     <span class="match-count-holder">
       <span class="match-count-number">0</span>
       <span class="match-count-text">Matches</span>
@@ -75,47 +75,181 @@ let controls =
       <span class="separator">❘</span>
       <span class='tag-count-holder'>Tags: <span>0</span></span>
       <span class="separator">❘</span>
-      <span class='auto-state-holder'>Scroll:&nbsp; <span onclick='onAuto()'>Off</span></span>
-      <span class="settings"></span>
+      <span class='auto-state-holder'>Scroll:&nbsp; <span onclick='onAutoChanged()'>Off</span></span>
+      <span class="settings" onclick='bsrhSettings()'></span>
     </span>
-</div>
+    <div id='bsrh-settings' open='false'>
+        <div id='bsrh-settings-general'>
+            <h6 class='inline-title'><span>General</span></h6>
+            <div class='general-section settings-content'>
+                <div>
+                    <span>Display position&nbsp;</span>
+                    <select name="position" id="bsrh-position" onchange='onPositionChanged(this)'>
+                      <option value="inline">Inline</option>
+                      <option value="top">Top</option>
+                      <option value="bottom">Bottom</option>
+                    </select>
+                    <select name="alignment" id="bsrh-alignment" onchange='onAlignmentChanged(this)'>
+                      <option value="left">Left</option>
+                      <option value="middle">Middle</option>
+                      <option value="right">Right</option>
+                    </select>
+                </div>
+                <div>
+                    <input type="checkbox" id="bsrh-nofocus" name="nofocus" onchange='onNofocusChanged(this)' />
+                    <label for="bsrh-nofocus">Hide highlighting on field focus</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="bsrh-minimap" name="minimap" onchange='onMinimapChanged(this)' />
+                    <label for="bsrh-minimap">Show match positions in scrollbar</label>
+                </div>
+            </div>
+        </div>
+        <div id='bsrh-settings-colors'>
+            <h6 class='inline-title'><span>Colors</span></h6>
+            <div class='color-tabs'>
+                <div class='color-title' target='light' onclick='showColorTab(this)'>Light</div>
+                <div class='color-title' target='dark' onclick='showColorTab(this)'>Dark</div>
+                <div class='color-title' target='presets' onclick='showColorTab(this)'>Presets</div>
+            </div>
+
+            <div class='color-section settings-content' section='light'>
+                <div>
+                    <span>Background</span>
+                    <input id='bsrh-light-background' type='color' oninput='onColorChanged(this)'/>
+                </div>
+                <div>
+                    <span>Foreground</span>
+                    <input id='bsrh-light-foreground' type='color' oninput='onColorChanged(this)'/>
+                </div>
+                <div>
+                    <span>Scrollbar</span>
+                    <input id='bsrh-light-match-position' type='color' oninput='onColorChanged(this)'/>
+                </div>
+                <div>
+                    <span>Overlap</span>
+                    <input id='bsrh-light-overlap' type='color' oninput='onColorChanged(this)'/>
+                </div>
+            </div>
+
+            <div class='color-section settings-content' section='dark'>
+                <div>
+                    <span>Background</span>
+                    <input id='bsrh-dark-background' type='color' oninput='onColorChanged(this)'/>
+                </div>
+                <div>
+                    <span>Foreground</span>
+                    <input id='bsrh-dark-foreground' type='color' oninput='onColorChanged(this)'/>
+                </div>
+                <div>
+                    <span>Scrollbar</span>
+                    <input id='bsrh-dark-match-position' type='color' oninput='onColorChanged(this)'/>
+                </div>
+                <div>
+                    <span>Overlap</span>
+                    <input id='bsrh-dark-overlap' type='color' oninput='onColorChanged(this)'/>
+                </div>
+            </div>
+
+            <div class='color-section settings-content' section='presets'>
+                <span><b>Nothing here yet!</b></span>
+            </div>
+        </div>
+    </div>
+</div></div>
 `
 
 let minimap = null;
 let scrollarea = null;
 let fieldarea = null;
 let toolbar = null;
+let noteeditor = null;
 
-function addControls(auto) {
-    auto_scroll = auto;
+function addControls(_settings) {
+    settings = _settings
 
     // First load has a race condition. Keep trying until element appears.
     let _toolbar = document.querySelector('div[role="toolbar"]');
     if (!_toolbar) {
-        setTimeout(() => {addControls(auto)}, 20)
+        setTimeout(() => {addControls(settings)}, 20)
         return;
     }
-    _toolbar.insertAdjacentHTML("beforeend", controls);
+    // Grab elements for later use
+    scrollarea = document.querySelector('.scroll-area');
+    fieldarea = document.querySelector('.scroll-area .fields');
+    toolbar = document.querySelector('.editor-toolbar');
+    noteeditor = document.querySelector('.note-editor')
+
+    // Positioning
+    if (settings['position'] == 'inline') {
+        _toolbar.insertAdjacentHTML("beforeend", controls);
+    } else if (settings['position'] == 'top') {
+        toolbar.insertAdjacentHTML("beforeend", controls);
+    } else if (settings['position'] == 'bottom') {
+        noteeditor.insertAdjacentHTML("beforeend", controls);
+    }
+    let positioner = document.getElementById('bsrh-controls-positioner');
+    positioner.setAttribute('position', settings['position']);
+    positioner.setAttribute('alignment', settings['alignment']);
+
+    apply_settings();
 
     // Steal the cog icon and shove it into our own settings button
     let cog = document.querySelector('.floating-reference button span').cloneNode(true);
-    _toolbar.querySelector('.bsrh-controls .settings').append(cog);
+    document.querySelector('.bsrh-controls .settings').append(cog);
 
     // Add the minimap
     let _scrollarea = document.querySelector('.scroll-area-relative');
     _scrollarea.insertAdjacentHTML("beforeend", `<div id="match-minimap"></div>`);
+    minimap = document.getElementById("match-minimap");
 
     // Add observers to recalculate minimap positions on height changes
-    let _fieldarea = document.querySelector('.scroll-area .fields');
-    resizeObserver.observe(_fieldarea);
+    resizeObserver.observe(fieldarea);
     resizeObserver.observe(_scrollarea);
     updateControls();
 
-    // Grab elements for later use
-    minimap = document.getElementById("match-minimap");
-    scrollarea = document.querySelector('.scroll-area');
-    fieldarea = _fieldarea;
-    toolbar = document.querySelector('.editor-toolbar');
+    // Show/Hide minimap based on setting
+    noteeditor.setAttribute('minimap', settings['minimap'])
+
+    // Set which color settings tab is open based on current theme
+    if (document.querySelector(':root').getAttribute('data-bs-theme') == "light") {
+        showColorTab(document.querySelector('.color-title[target=light]'));
+    } else {
+        showColorTab(document.querySelector('.color-title[target=dark]'));
+    }
+}
+
+function apply_settings() {
+    // Colors
+    let root = document.querySelector(':root');
+    let rs = getComputedStyle(root);
+    const colors = [
+        'light-background',
+        'light-foreground',
+        'light-overlap',
+        'light-match-position',
+        'dark-background',
+        'dark-foreground',
+        'dark-overlap',
+        'dark-match-position'
+    ];
+    colors.forEach(name => {
+        value = settings[name]
+        css_name = '--bsrh-'+name;
+        element_name = 'bsrh-'+name;
+        if (value) {
+            root.style.setProperty(css_name , value);
+            // Also set the input field's value
+            document.getElementById(element_name).value = value;
+        } else {
+            // Use the CSS value as the default color of the input field
+            document.getElementById(element_name).value = rs.getPropertyValue(css_name);
+        }
+    })
+    document.getElementById('bsrh-position').value = settings['position'];
+    document.getElementById('bsrh-alignment').value = settings['alignment'];
+    document.getElementById('bsrh-nofocus').checked = settings['nofocus'];
+    document.getElementById('bsrh-minimap').checked = settings['minimap'];
 }
 
 function updateControls() {
@@ -137,8 +271,8 @@ function updateControls() {
     c.querySelector('.tag-count-holder span').innerHTML = matched_tags;
 
     // Auto-scroll
-    c.querySelector('.auto-state-holder').setAttribute('matched', auto_scroll);
-    c.querySelector('.auto-state-holder span').innerHTML = auto_scroll ? 'On' : 'Off';
+    c.querySelector('.auto-state-holder').setAttribute('matched', settings['auto']);
+    c.querySelector('.auto-state-holder span').innerHTML = settings['auto'] ? 'On' : 'Off';
 }
 
 // Consume the python payload containing the search terms
@@ -245,7 +379,7 @@ function beginHighlighter() {
     // Update UI after matching done
     updateControls();
     fillMinimap();
-    if (auto_scroll && scroll_to) {
+    if (settings['auto'] && scroll_to) {
         // Here's how this is going to work. We scroll to the element immediately.
         scrollToMatch();
 
@@ -418,7 +552,6 @@ function highlightField(container, minimap_now = true) {
     // The code view converts spaces within image src to %20. Convert them back, because
     // Anki is matching on the space. Keep a record of any file names that were converted - we
     // use them later to reposition highlights because the string length becomes different.
-
     code = code.replace(/(<img.*src=")(.*)(">)/g, function(match, pre, src, post) {
         src = src.replaceAll("%20", function(m) {
             p20s.add('"'+src+'"');
@@ -500,6 +633,9 @@ function unhighlightField(container) {
 }
 
 function fillMinimap() {
+    if (!settings['minimap']) {
+      return;
+    }
     // If the field area is too small to generate a scroll bar, we cap the height of the minimap in the
     // positioning calculation to match it. This gives us precise notch positioning when there's no scrolling.
     let max_y = fieldarea.scrollHeight;
@@ -553,9 +689,11 @@ function fillMinimap() {
 }
 
 function editableOnFocus(event) {
-  let editable = event.currentTarget;
-  let container = editable.parentNode.host.closest('.field-container');
-  unhighlightField(container);
+  if (settings['nofocus']) {
+      let editable = event.currentTarget;
+      let container = editable.parentNode.host.closest('.field-container');
+      unhighlightField(container);
+  }
 }
 
 function editableOnBlur(event) {
@@ -577,7 +715,9 @@ function codeOnFocus(event) {
     setTimeout(() => {
       // Highlight the field to fill out the minimap with the new matches before removing
       highlightField(container);
-      unhighlightField(container);
+      if (settings['nofocus']) {
+        unhighlightField(container);
+      }
     }, 0)
   }
 }
@@ -618,13 +758,6 @@ function highlightTags() {
     });
 }
 
-// UI controls
-function onAuto(event) {
-  auto_scroll = !auto_scroll;
-  pycmd('BSRH:' + JSON.stringify({'auto': auto_scroll}));
-  updateControls();
-}
-
 function scrollToMatch() {
     let target = scroll_to;
     // The positioning code resembles the minimap notch positioning, but tweaked
@@ -649,4 +782,85 @@ function scrollToMatch() {
     let pos = fromtop-tb;
     let centered = pos - (scrollarea.clientHeight / 2);
     scrollarea.scrollTo(0, centered);
+}
+
+// ---- Settings ----
+
+function saveSettings() {
+    pycmd('BSRH:' + JSON.stringify(settings));
+}
+
+function onAutoChanged(event) {
+    settings['auto'] = !settings['auto']
+    saveSettings();
+    updateControls();
+}
+
+function bsrhSettings() {
+    let open = document.getElementById('bsrh-settings').getAttribute('open');
+    document.getElementById('bsrh-settings').setAttribute('open', open == "false");
+}
+
+function showColorTab(elem) {
+    document.querySelectorAll('.color-title').forEach(e => e.setAttribute('active', false));
+    document.querySelectorAll('.color-section').forEach(e => e.setAttribute('active', false));
+
+    elem.setAttribute('active', true);
+    let section = elem.getAttribute('target');
+    document.querySelector(`.color-section[section=${section}]`).setAttribute('active', true);
+}
+
+function onColorChanged(target) {
+    var root = document.querySelector(':root');
+    const colors = [
+        'bsrh-light-background',
+        'bsrh-light-foreground',
+        'bsrh-light-overlap',
+        'bsrh-light-match-position',
+        'bsrh-dark-background',
+        'bsrh-dark-foreground',
+        'bsrh-dark-overlap',
+        'bsrh-dark-match-position'
+    ];
+
+    for (let i = 0; i < colors.length; i++) {
+        let name = colors[i];
+        if (name != target.id) {
+            continue;
+        }
+        root.style.setProperty('--'+name , target.value);
+
+        // Save setting
+        settings[name.substr(5, name.length)] = target.value;
+        saveSettings();
+        return;
+    }
+}
+
+function onPositionChanged(target) {
+    settings['position'] = target.value;
+    let positioner = document.getElementById('bsrh-controls-positioner');
+    positioner.setAttribute('position', settings['position']);
+    if (settings['position'] == 'inline') {
+        document.querySelector('div[role="toolbar"]').append(positioner);
+    } else if (settings['position'] == 'top') {
+        toolbar.append(positioner);
+    } else if (settings['position'] == 'bottom') {
+        noteeditor.append(positioner);
+    }
+    saveSettings();
+}
+function onAlignmentChanged(target) {
+    settings['alignment'] = target.value;
+    document.getElementById('bsrh-controls-positioner').setAttribute('alignment', settings['alignment'])
+    saveSettings();
+}
+function onNofocusChanged(target) {
+    settings['nofocus'] = target.checked;
+    saveSettings();
+}
+function onMinimapChanged(target) {
+    settings['minimap'] = target.checked;
+    noteeditor.setAttribute('minimap', settings['minimap'])
+    saveSettings();
 }
