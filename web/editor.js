@@ -738,17 +738,26 @@ function highlightTags() {
         let re = new RegExp(tag, "gi");
         buttons.forEach(element => {
             let tag_text = element.querySelector('span').childNodes[0];
-            let matches = [...tag_text.data.matchAll(re)];
+            data = tag_text.data.replaceAll('∷', '::')
+            let matches = [...data.matchAll(re)];
+
+            // Ensure we only count once, in case of regex matching multiple parts
+            if (matches.length) {
+                matched_tags++;
+                matched_total++;
+            }
+
             matches.forEach((match) => {
+                // Count the number of ::s we matched and offset by 1 for each because
+                // the real node uses the single character ∷
+                let offset = matchCount(match[0], /::/g);
                 let r = new StaticRange({
                     'startContainer': tag_text,
                     'endContainer': tag_text,
                     'startOffset': match.index,
-                    'endOffset': match.index + match[0].length
+                    'endOffset': match.index + match[0].length - offset
                 });
                 CSS.highlights.get('tag').add(r);
-                matched_tags++;
-                matched_total++;
             });
         });
     });
