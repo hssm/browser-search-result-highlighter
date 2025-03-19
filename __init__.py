@@ -16,6 +16,10 @@ from .utils.parser import parse_search
 addon_package = mw.addonManager.addon_from_module(__name__)
 default_settings = [
     ('auto', True),
+    ('position', 'inline'),
+    ('alignment', 'right'),
+    ('nofocus', True),
+    ('minimap', True),
     # Rely on CSS for defaults
     ('light-background', None),
     ('light-foreground', None),
