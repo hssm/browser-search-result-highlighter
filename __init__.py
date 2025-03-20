@@ -37,10 +37,11 @@ class BrowserSearchResultHighlighter:
         self.filter_terms = []
 
     def editor_init(self, editor):
-        config = mw.col.get_config('bsrh', {})
-        config = self.set_config_defaults(config)
-        config = json.dumps(config)
-        editor.web.eval(f"addControls({config})")
+        if editor.editorMode is EditorMode.BROWSER:
+            config = mw.col.get_config('bsrh', {})
+            config = self.set_config_defaults(config)
+            config = json.dumps(config)
+            editor.web.eval(f"addControls({config})")
 
     def set_config_defaults(self, config):
         for setting, default in default_settings:
