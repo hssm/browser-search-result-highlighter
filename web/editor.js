@@ -798,7 +798,7 @@ function saveSettings() {
 function onAutoChanged(event) {
     settings['auto'] = !settings['auto']
     saveSettings();
-    updateControls();
+    beginHighlighter();
 }
 
 function bsrhSettings() {
