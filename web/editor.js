@@ -100,7 +100,7 @@ let controls =
                 </div>
             </div>
         </div>
-        <div id='bsrh-settings-colors'>
+        <div id='bsrh-settings-colors' style="display: none;">
             <h6 class='inline-title'><span>Colors</span></h6>
             <div class='color-tabs'>
                 <div class='color-title' target='light' onclick='showColorTab(this)'>Light</div>

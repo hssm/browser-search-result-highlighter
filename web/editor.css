@@ -1,4 +1,4 @@
-:root {
+::highlight(match), ::highlight(tag), ::highlight(overlap), :root {
   --bsrh-light-background: #ffe500;
   --bsrh-light-foreground: #121212;
   --bsrh-light-overlap: #ffca00;
@@ -245,6 +245,8 @@
 .color-section[active=true] {
   display: flex;
   flex-direction: column;
+  height: 132px;
+  max-height: 132px;
 }
 .color-section > div {
   display: flex;
