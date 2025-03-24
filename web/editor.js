@@ -816,6 +816,18 @@ function bsrhSettings() {
     document.getElementById('bsrh-settings').setAttribute('open', open == "false");
 }
 
+// Close menu when we click outside of it
+document.addEventListener('mousedown', function(e) {
+    // Ignore clicks on the actual menu button because that click will close it
+    if (e.target.closest('.settings') == document.querySelector('.bsrh-controls .settings')) {
+        return;
+    }
+    // Everything else that is not a descendant of the menu will close it
+    if (!document.getElementById('bsrh-settings').contains(e.target)) {
+        document.getElementById('bsrh-settings').setAttribute('open', "false");
+    }
+});
+
 function showColorTab(elem) {
     document.querySelectorAll('.color-title').forEach(e => e.setAttribute('active', false));
     document.querySelectorAll('.color-section').forEach(e => e.setAttribute('active', false));
