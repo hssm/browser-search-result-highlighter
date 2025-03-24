@@ -100,7 +100,7 @@ let controls =
                 </div>
             </div>
         </div>
-        <div id='bsrh-settings-colors' style="display: none;">
+        <div id='bsrh-settings-colors'>
             <h6 class='inline-title'><span>Colors</span></h6>
             <div class='color-tabs'>
                 <div class='color-title' target='light' onclick='showColorTab(this)'>Light</div>
@@ -238,7 +238,17 @@ function loadUserColors() {
         css_name = '--bsrh-'+name;
         element_name = 'bsrh-'+name;
         if (value) {
-            root.style.setProperty(css_name , value);
+            // TODO: restore in a future version when browser catches up
+            // root.style.setProperty(css_name , value);
+
+            // This is the hacky version
+            let sheets = document.styleSheets;
+            for (let i = 0; i < sheets.length; i++) {
+                sheets[i].addRule(
+                    "::highlight(match), ::highlight(tag), ::highlight(overlap), :root",
+                    `${css_name}: ${value};`
+                )
+            }
             // Also set the input field's value
             document.getElementById(element_name).value = value;
         } else {
@@ -833,8 +843,16 @@ function onColorChanged(target) {
         if (name != target.id) {
             continue;
         }
-        root.style.setProperty('--'+name , target.value);
-
+        // TODO: restore in a future version when browser catches up
+        // root.style.setProperty('--'+name , target.value);
+        // This is the hacky version
+        let sheets = document.styleSheets;
+        for (let i = 0; i < sheets.length; i++) {
+            sheets[i].addRule(
+                "::highlight(match), ::highlight(tag), ::highlight(overlap), :root",
+                `--${name}: ${target.value};`
+            )
+        }
         // Save setting
         settings[name.substr(5, name.length)] = target.value;
         saveSettings();

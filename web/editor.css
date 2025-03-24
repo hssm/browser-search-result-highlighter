@@ -1,13 +1,13 @@
 ::highlight(match), ::highlight(tag), ::highlight(overlap), :root {
-  --bsrh-light-background: #ffe500;
-  --bsrh-light-foreground: #121212;
-  --bsrh-light-overlap: #ffca00;
-  --bsrh-light-match-position: #b79800;
+  --bsrh-light-background:#ffe500;
+  --bsrh-light-foreground:#121212;
+  --bsrh-light-overlap:#ffca00;
+  --bsrh-light-match-position:#b79800;
 
-  --bsrh-dark-background: #fff068;
-  --bsrh-dark-foreground: #121212;
-  --bsrh-dark-overlap: #e8b907;
-  --bsrh-dark-match-position: #c5b204;
+  --bsrh-dark-background:#fff068;
+  --bsrh-dark-foreground:#121212;
+  --bsrh-dark-overlap:#e8b907;
+  --bsrh-dark-match-position:#c5b204;
 }
 
 ::highlight(match), ::highlight(tag) {
