@@ -59,6 +59,7 @@
   font-size: 14px;
   width: 320px;
   margin-bottom: 0.15rem;
+  user-select: none;
 }
 .night_mode .bsrh-controls {
   color: #aaa;
