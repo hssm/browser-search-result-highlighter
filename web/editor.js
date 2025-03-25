@@ -163,9 +163,8 @@ let noteeditor = null;
 function addControls(_settings) {
     settings = _settings
 
-    // First load has a race condition. Keep trying until element appears.
-    let _toolbar = document.querySelector('div[role="toolbar"]');
-    if (!_toolbar) {
+    // First load has a race condition. Keep trying until fields appear.
+    if (!document.querySelector(".note-editor .fields")) {
         setTimeout(() => {addControls(settings)}, 20)
         return;
     }
@@ -176,8 +175,9 @@ function addControls(_settings) {
     noteeditor = document.querySelector('.note-editor')
 
     // Positioning
+    let tb_container = document.querySelector('div[role="toolbar"]');
     if (settings['position'] == 'inline') {
-        _toolbar.insertAdjacentHTML("beforeend", controls);
+        tb_container.insertAdjacentHTML("beforeend", controls);
     } else if (settings['position'] == 'top') {
         toolbar.insertAdjacentHTML("beforeend", controls);
     } else if (settings['position'] == 'bottom') {
