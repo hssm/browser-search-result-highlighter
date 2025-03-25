@@ -248,6 +248,7 @@
   flex-direction: column;
   height: 132px;
   max-height: 132px;
+  overflow-y: auto;
 }
 .color-section > div {
   display: flex;
@@ -268,4 +269,16 @@
 .color-title[active=true] {
   background: #232323;
   color: #fff;
+}
+
+/* Presets */
+.color-section .preset-swatch {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.preset-swatch span {
+  padding: 2px 8px;
+  cursor: pointer;
 }

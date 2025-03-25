@@ -67,6 +67,7 @@ class BrowserSearchResultHighlighter:
         if not isinstance(context.parentWindow, aqt.browser.browser.Browser):
             return
         web_content.js.append(f"/_addons/{addon_package}/web/editor.js")
+        web_content.js.append(f"/_addons/{addon_package}/web/presets.js")
         web_content.css.append(f"/_addons/{addon_package}/web/editor.css")
 
     def editor_did_load_note(self, editor, focusTo=None) -> None:

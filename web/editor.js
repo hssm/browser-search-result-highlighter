@@ -147,7 +147,7 @@ let controls =
             </div>
 
             <div class='color-section settings-content' section='presets'>
-                <span><b>Nothing here yet!</b></span>
+                <div class='preset-swatch'></div>
             </div>
         </div>
     </div>
@@ -194,6 +194,7 @@ function addControls(_settings) {
     document.getElementById('bsrh-minimap').checked = settings['minimap'];
 
     loadUserColors();
+    loadPresetColors();
 
     // Steal the cog icon and shove it into our own settings button
     let cog = document.querySelector('.floating-reference button span').cloneNode(true);
@@ -256,6 +257,25 @@ function loadUserColors() {
             document.getElementById(element_name).value = rs.getPropertyValue(css_name);
         }
     })
+}
+
+function loadPresetColors() {
+    let swatch = document.querySelector('.preset-swatch');
+    let bg_name = 'light-background';
+    let fg_name = 'light-foreground';
+    if (document.querySelector(':root').getAttribute('data-bs-theme') == "dark") {
+        bg_name = 'dark-background';
+        fg_name = 'dark-foreground';
+    }
+    for (let i = 0; i < bsrh_presets.length; i++) {
+        let bg = bsrh_presets[i][bg_name];
+        let fg = bsrh_presets[i][fg_name];
+        let preset =
+        `<span idx=${i} onclick='onPreset(this)'` +
+        `style='background-color: ${bg}; color: ${fg};'` +
+        `>Example</span>`
+        swatch.insertAdjacentHTML("beforeend", preset);
+    }
 }
 
 function updateControls() {
@@ -898,4 +918,12 @@ function onMinimapChanged(target) {
     settings['minimap'] = target.checked;
     noteeditor.setAttribute('minimap', settings['minimap'])
     saveSettings();
+}
+function onPreset(elem) {
+    let preset = bsrh_presets[elem.getAttribute('idx')];
+    Object.keys(preset).forEach(key => {
+        settings[key] = preset[key];
+    })
+    saveSettings();
+    loadUserColors();
 }
