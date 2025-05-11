@@ -70,8 +70,8 @@ let controls =
       <span class="separator">❘</span>
       <span class='tag-count-holder'>Tags: <span>0</span></span>
       <span class="separator">❘</span>
-      <span class='auto-state-holder'>Scroll:&nbsp; <span onclick='onAutoChanged()'>Off</span></span>
-      <span class="settings" onclick='bsrhSettings()'></span>
+      <span class='auto-state-holder'>Scroll:&nbsp; <span>Off</span></span>
+      <span class="settings"></span>
     </span>
     <div id='bsrh-settings' open='false'>
         <div id='bsrh-settings-general'>
@@ -79,23 +79,23 @@ let controls =
             <div class='general-section settings-content'>
                 <div>
                     <span>Display position&nbsp;</span>
-                    <select name="position" id="bsrh-position" onchange='onPositionChanged(this)'>
+                    <select name="position" id="bsrh-position">
                       <option value="inline">Inline</option>
                       <option value="top">Top</option>
                       <option value="bottom">Bottom</option>
                     </select>
-                    <select name="alignment" id="bsrh-alignment" onchange='onAlignmentChanged(this)'>
+                    <select name="alignment" id="bsrh-alignment">
                       <option value="left">Left</option>
                       <option value="middle">Middle</option>
                       <option value="right">Right</option>
                     </select>
                 </div>
                 <div>
-                    <input type="checkbox" id="bsrh-nofocus" name="nofocus" onchange='onNofocusChanged(this)' />
+                    <input type="checkbox" id="bsrh-nofocus" name="nofocus"/>
                     <label for="bsrh-nofocus">Hide highlighting on field focus</label>
                 </div>
                 <div>
-                    <input type="checkbox" id="bsrh-minimap" name="minimap" onchange='onMinimapChanged(this)' />
+                    <input type="checkbox" id="bsrh-minimap" name="minimap"/>
                     <label for="bsrh-minimap">Show match positions in scrollbar</label>
                 </div>
             </div>
@@ -103,46 +103,46 @@ let controls =
         <div id='bsrh-settings-colors'>
             <h6 class='inline-title'><span>Colors</span></h6>
             <div class='color-tabs'>
-                <div class='color-title' target='light' onclick='showColorTab(this)'>Light</div>
-                <div class='color-title' target='dark' onclick='showColorTab(this)'>Dark</div>
-                <div class='color-title' target='presets' onclick='showColorTab(this)'>Presets</div>
+                <div class='color-title' target='light'>Light</div>
+                <div class='color-title' target='dark'>Dark</div>
+                <div class='color-title' target='presets'>Presets</div>
             </div>
 
             <div class='color-section settings-content' section='light'>
                 <div>
                     <span>Background</span>
-                    <input id='bsrh-light-background' type='color' oninput='onColorChanged(this)'/>
+                    <input id='bsrh-light-background' type='color'/>
                 </div>
                 <div>
                     <span>Foreground</span>
-                    <input id='bsrh-light-foreground' type='color' oninput='onColorChanged(this)'/>
+                    <input id='bsrh-light-foreground' type='color'/>
                 </div>
                 <div>
                     <span>Scrollbar</span>
-                    <input id='bsrh-light-match-position' type='color' oninput='onColorChanged(this)'/>
+                    <input id='bsrh-light-match-position' type='color'/>
                 </div>
                 <div>
                     <span>Overlap</span>
-                    <input id='bsrh-light-overlap' type='color' oninput='onColorChanged(this)'/>
+                    <input id='bsrh-light-overlap' type='color'/>
                 </div>
             </div>
 
             <div class='color-section settings-content' section='dark'>
                 <div>
                     <span>Background</span>
-                    <input id='bsrh-dark-background' type='color' oninput='onColorChanged(this)'/>
+                    <input id='bsrh-dark-background' type='color'/>
                 </div>
                 <div>
                     <span>Foreground</span>
-                    <input id='bsrh-dark-foreground' type='color' oninput='onColorChanged(this)'/>
+                    <input id='bsrh-dark-foreground' type='color'/>
                 </div>
                 <div>
                     <span>Scrollbar</span>
-                    <input id='bsrh-dark-match-position' type='color' oninput='onColorChanged(this)'/>
+                    <input id='bsrh-dark-match-position' type='color'/>
                 </div>
                 <div>
                     <span>Overlap</span>
-                    <input id='bsrh-dark-overlap' type='color' oninput='onColorChanged(this)'/>
+                    <input id='bsrh-dark-overlap' type='color'/>
                 </div>
             </div>
 
@@ -219,6 +219,16 @@ function addControls(_settings) {
     } else {
         showColorTab(document.querySelector('.color-title[target=dark]'));
     }
+
+    // Menu events
+    document.querySelector('.auto-state-holder').addEventListener('click', onAutoChanged);
+    document.querySelector('.settings').addEventListener('click', bsrhSettings);
+    document.querySelector('#bsrh-position').addEventListener('change', onPositionChanged);
+    document.querySelector('#bsrh-alignment').addEventListener('change', onAlignmentChanged);
+    document.querySelectorAll('.color-title').forEach(e => e.addEventListener('click', showColorTab));
+    document.querySelector('#bsrh-nofocus').addEventListener('change', onNofocusChanged);
+    document.querySelector('#bsrh-minimap').addEventListener('change', onMinimapChanged);
+    document.querySelectorAll('.color-section input').forEach(e => e.addEventListener('input', onColorChanged));
 }
 
 function loadUserColors() {
@@ -271,11 +281,12 @@ function loadPresetColors() {
         let bg = bsrh_presets[i][bg_name];
         let fg = bsrh_presets[i][fg_name];
         let preset =
-        `<span idx=${i} onclick='onPreset(this)'` +
+        `<span idx=${i} ` +
         `style='background-color: ${bg}; color: ${fg};'` +
         `>Example</span>`
         swatch.insertAdjacentHTML("beforeend", preset);
     }
+    swatch.querySelectorAll('span').forEach(e => e.addEventListener('click', onPreset));
 }
 
 function updateControls() {
@@ -628,7 +639,7 @@ function highlightField(container, minimap_now = true) {
         highlightCodeExpander(container);
     }
 
-    editable.addEventListener('focus', editableOnFocus); // TODO: remove stale listeners?
+    editable.addEventListener('focus', editableOnFocus);
     editable.addEventListener('blur', editableOnBlur);
 
     if (code_mirror) {
@@ -848,16 +859,21 @@ document.addEventListener('mousedown', function(e) {
     }
 });
 
-function showColorTab(elem) {
+function showColorTab(e) {
+    let target = e;
+    if(e.target) {
+        target = e.target;
+    }
     document.querySelectorAll('.color-title').forEach(e => e.setAttribute('active', false));
     document.querySelectorAll('.color-section').forEach(e => e.setAttribute('active', false));
 
-    elem.setAttribute('active', true);
-    let section = elem.getAttribute('target');
+    target.setAttribute('active', true);
+    let section = target.getAttribute('target');
     document.querySelector(`.color-section[section=${section}]`).setAttribute('active', true);
 }
 
-function onColorChanged(target) {
+function onColorChanged(e) {
+    let target = e.target;
     var root = document.querySelector(':root');
     const colors = [
         'bsrh-light-background',
@@ -892,8 +908,8 @@ function onColorChanged(target) {
     }
 }
 
-function onPositionChanged(target) {
-    settings['position'] = target.value;
+function onPositionChanged(e) {
+    settings['position'] = e.target.value;
     let positioner = document.getElementById('bsrh-controls-positioner');
     positioner.setAttribute('position', settings['position']);
     if (settings['position'] == 'inline') {
@@ -905,22 +921,22 @@ function onPositionChanged(target) {
     }
     saveSettings();
 }
-function onAlignmentChanged(target) {
-    settings['alignment'] = target.value;
+function onAlignmentChanged(e) {
+    settings['alignment'] = e.target.value;
     document.getElementById('bsrh-controls-positioner').setAttribute('alignment', settings['alignment'])
     saveSettings();
 }
-function onNofocusChanged(target) {
-    settings['nofocus'] = target.checked;
+function onNofocusChanged(e) {
+    settings['nofocus'] = e.target.checked;
     saveSettings();
 }
-function onMinimapChanged(target) {
-    settings['minimap'] = target.checked;
+function onMinimapChanged(e) {
+    settings['minimap'] = e.target.checked;
     noteeditor.setAttribute('minimap', settings['minimap'])
     saveSettings();
 }
-function onPreset(elem) {
-    let preset = bsrh_presets[elem.getAttribute('idx')];
+function onPreset(e) {
+    let preset = bsrh_presets[e.target.getAttribute('idx')];
     Object.keys(preset).forEach(key => {
         settings[key] = preset[key];
     })
