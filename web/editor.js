@@ -249,17 +249,7 @@ function loadUserColors() {
         css_name = '--bsrh-'+name;
         element_name = 'bsrh-'+name;
         if (value) {
-            // TODO: restore in a future version when browser catches up
-            // root.style.setProperty(css_name , value);
-
-            // This is the hacky version
-            let sheets = document.styleSheets;
-            for (let i = 0; i < sheets.length; i++) {
-                sheets[i].addRule(
-                    "::highlight(match), ::highlight(tag), ::highlight(overlap), :root",
-                    `${css_name}: ${value};`
-                )
-            }
+            root.style.setProperty(css_name , value);
             // Also set the input field's value
             document.getElementById(element_name).value = value;
         } else {
@@ -861,7 +851,7 @@ document.addEventListener('mousedown', function(e) {
 
 function showColorTab(e) {
     let target = e;
-    if(e.target) {
+    if (e.target) {
         target = e.target;
     }
     document.querySelectorAll('.color-title').forEach(e => e.setAttribute('active', false));
@@ -891,16 +881,7 @@ function onColorChanged(e) {
         if (name != target.id) {
             continue;
         }
-        // TODO: restore in a future version when browser catches up
-        // root.style.setProperty('--'+name , target.value);
-        // This is the hacky version
-        let sheets = document.styleSheets;
-        for (let i = 0; i < sheets.length; i++) {
-            sheets[i].addRule(
-                "::highlight(match), ::highlight(tag), ::highlight(overlap), :root",
-                `--${name}: ${target.value};`
-            )
-        }
+        root.style.setProperty('--'+name , target.value);
         // Save setting
         settings[name.substr(5, name.length)] = target.value;
         saveSettings();
