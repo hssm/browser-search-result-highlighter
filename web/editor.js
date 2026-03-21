@@ -460,9 +460,6 @@ function highlightField(container, minimap_now = true) {
             if (node.nodeType === Node.TEXT_NODE) {
                 let p20_offsets = [];
                 let data = node.data;
-                if (normalize) {
-                    data = data.normalize("NFKD").replace(/\p{M}/gu, '');
-                }
 
                 if (p20s.has(data)) {
                     // This is the portion of the code block that contains an image src with
