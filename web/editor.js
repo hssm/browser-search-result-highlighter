@@ -460,6 +460,29 @@ function highlightField(container, minimap_now = true) {
             if (node.nodeType === Node.TEXT_NODE) {
                 let p20_offsets = [];
                 let data = node.data;
+                let data2 = null;
+                if (normalize) {
+                    data = data.normalize("NFKD").replace(/\p{M}/gu, '');
+                    data2 = node.data;
+                    // Note for normalized text search:
+                    // Stripping the target data of combining characters works well for some languages
+                    // and fails on others. In Arabic, for example, the diacritical marks *contribute
+                    // to the string length* because they cannot be normalized into a single code point
+                    // (like á), so matching 4 chars in a word with 4 chars and 4 diacritics means the
+                    // highlighting will only cover half the word (which has length 8). To correctly match,
+                    // the target text must be unstripped and the *search string* does the ignoring of
+                    // combining characters. That's what the p{M}* spam does when we build the search regex.
+
+                    // These strategies are incompatible but my workaround is to run both of them every time
+                    // anyway and then detect which strategy is the correct choice. We can do this by finding
+                    // a discrepancy in the match length or position (if the combining chars are non-lengthy
+                    // then both matches will have the same length+position).
+
+                    // data2 and match2 will hold attempts to match the unstripped versions of data.
+                }
+
+                // Note: in filenames, non-ascii appears to be converted to escape codes. Thus,
+                // when normalizing, it is sufficient to only track original data (not data2)
 
                 if (p20s.has(data)) {
                     // This is the portion of the code block that contains an image src with
@@ -470,8 +493,23 @@ function highlightField(container, minimap_now = true) {
                         return ' '
                     });
                 }
+
                 let matches = [...data.matchAll(regex)];
-                matches.forEach((match) => {
+                let matches2 = null;
+                if (normalize) {
+                    matches2 = [...data2.matchAll(regex)];
+                }
+
+                for (let i = 0; i < matches.length; i++) {
+                    let match = matches[i];
+                    if (normalize) {
+                        let match2 = matches2[i];
+                        if (match2 && (match[0].length != match2[0].length || match.index != match2.index)) {
+                            match = match2;
+                        }
+                    }
+
+
                     // A lot of work for an edge case! If we have matches on a node that has
                     // had %20s converted to spaces, we account for the excess distance we need
                     // to travel in the original text to correctly cover the match
@@ -505,7 +543,7 @@ function highlightField(container, minimap_now = true) {
                         ranges.set(node, []);
                     }
                     ranges.get(node).push([r.startOffset, r.endOffset]);
-                });
+                }
             } else {
                 node.childNodes.forEach(n => highlightWithinInner(n))
             }
