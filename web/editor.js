@@ -57,6 +57,7 @@ const resizeObserver = new ResizeObserver(entries => {
     }
 });
 
+
 // UI controls
 let controls =
 `
@@ -340,6 +341,7 @@ function parseTerms() {
     }
     function compileNoncombs(terms) {
         let out = [];
+
         terms.forEach(term => {
             // Anki escapes spaces in quoted terms. This breaks our regex, so unquote it.
             term = term.replace('\\ ', ' ');
@@ -347,6 +349,53 @@ function parseTerms() {
                 return;
             }
             let search = term.normalize("NFKD").replace(/\p{M}/gu, '');
+
+            // Anki substitutes some extra characters in non-combining mode and matches both ways.
+            // We need to support that as well.
+            // https://github.com/ankitects/anki/blob/71ec878780c1b81b49b1e18b3c41237bda51e20c/rslib/src/text.rs#L401
+            function replace_more(string) {
+                var re = /(Æ|TH|OE|€|Ð|Ø|Þ|ß|ð|Đ|Ħ|ĸ|Ł|Ŋ|Œ|Ŧ|Ə|ǝ|ɑ|E|AE|D|O|s|H|i|k|L|N|T|a)/gui;
+                return string.replace(re, function(match) {
+                    if (!['ß', 'ð', 'ǝ', 'ɑ'].includes(match)) {
+                        match = match.toUpperCase();
+                    }
+                    switch (match) {
+                        case 'AE': return "(AE|Æ|æ)";
+                        case 'TH': return "(TH|Þ|þ)";
+                        case 'OE': return "(OE|Œ|œ)";
+                        case '€': return "(€|E)";
+                        case 'Æ': return "(Æ|AE|ae)";
+                        case 'Ð': return "(Ð|D)";
+                        case 'Ø': return "(Ø|O|o)";
+                        case 'Þ': return "(Þ|TH|th)";
+                        case 'ß': return "(ß|s)";
+                        case 'ð': return "(ð|d)";
+                        case 'Đ': return "(Đ|D|d)";
+                        case 'Ħ': return "(Ħ|H|h)";
+                        case 'ĸ': return "(ĸ|k)";
+                        case 'Ł': return "(Ł|L|l)";
+                        case 'Ŋ': return "(Ŋ|N|n)";
+                        case 'Œ': return "(Œ|OE|oe)";
+                        case 'Ŧ': return "(Ŧ|T|t)";
+                        case 'Ə': return "(Ə|E)";
+                        case 'ǝ': return "(ǝ|e)";
+                        case 'ɑ': return "(ɑ|a)";
+                        case 'E': return "(E|€|Ə|ǝ)";
+                        case 'D': return "(D|Ð|Đ|ð|đ)";
+                        case 'O': return "(O|Ø|ø)";
+                        case 'S': return "(s|ß)";
+                        case 'H': return "(H|Ħ|ħ)";
+                        case 'I': return "(i|ı)";
+                        case 'K': return "(k|ĸ)";
+                        case 'L': return "(L|Ł|ł)";
+                        case 'N': return "(N|Ŋ|ŋ)";
+                        case 'T': return "(T|Ŧ|ŧ)";
+                        case 'A': return "(a|ɑ)";
+                    }
+                });
+            }
+            search = replace_more(search);
+
             let regex_build = [];
             regex_build.push('\\p{M}*');
             for (let i = 0; i < search.length; i++) {
