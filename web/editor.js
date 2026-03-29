@@ -354,11 +354,25 @@ function parseTerms() {
             // We need to support that as well.
             // https://github.com/ankitects/anki/blob/71ec878780c1b81b49b1e18b3c41237bda51e20c/rslib/src/text.rs#L401
             function replace_more(string) {
-                var re = /(Æ|TH|OE|€|Ð|Ø|Þ|ß|ð|Đ|Ħ|ĸ|Ł|Ŋ|Œ|Ŧ|Ə|ǝ|ɑ|E|AE|D|O|s|H|i|k|L|N|T|a)/gui;
+                var re =
+                /(Æ|TH|OE|€|Ð|Ø|Þ|ß|ð|Đ|Ħ|ĸ|Ł|Ŋ|Œ|Ŧ|Ə|ǝ|ɑ|E|AE|D|O|s|H|i|k|L|N|T|a|ا|أ|إ|آ|ى|و|ؤ|ي|ئ|ت|ة)/gui;
                 return string.replace(re, function(match) {
                     if (!['ß', 'ð', 'ǝ', 'ɑ'].includes(match)) {
                         match = match.toUpperCase();
                     }
+                    if (['ا','أ','إ','آ','ى'].includes(match)) {
+                        return '(ا|أ|إ|آ|ى)';
+                    }
+                    if (['و','ؤ'].includes(match)) {
+                        return '(و|ؤ)';
+                    }
+                    if (['ي','ئ'].includes(match)) {
+                        return '(ي|ئ)';
+                    }
+                    if (['ت','ة'].includes(match)) {
+                        return '(ت|ة)';
+                    }
+
                     switch (match) {
                         case 'AE': return "(AE|Æ|æ)";
                         case 'TH': return "(TH|Þ|þ)";
