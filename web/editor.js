@@ -408,14 +408,16 @@ function parseTerms() {
                     }
                 });
             }
-            search = replace_more(search);
 
             let regex_build = [];
             for (let i = 0; i < search.length; i++) {
                 regex_build.push(search[i]);
                 regex_build.push('\\p{M}*');
             }
-            out.push(new RegExp(regex_build.join(''), 'giu'));
+            const built = replace_more(regex_build.join(''));
+            const regex = new RegExp(built, 'giu');
+
+            out.push(regex);
         })
         return out;
     }
