@@ -704,7 +704,7 @@ function highlightField(container, minimap_now = true) {
     })
     terms['noncomb'].forEach(re => {
         match_count_editable += highlightWithin(editable, re, normalize=true);
-        match_count_code += matchCount(code.normalize("NFKD"), re);
+        match_count_code += matchCount(code.normalize("NFKD").replace(/\p{M}/gu, ''), re);
     })
     highlightOverlaps();
 
