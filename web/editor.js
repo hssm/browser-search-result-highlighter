@@ -411,7 +411,6 @@ function parseTerms() {
             search = replace_more(search);
 
             let regex_build = [];
-            regex_build.push('\\p{M}*');
             for (let i = 0; i < search.length; i++) {
                 regex_build.push(search[i]);
                 regex_build.push('\\p{M}*');
