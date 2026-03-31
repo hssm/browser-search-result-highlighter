@@ -1,6 +1,5 @@
 # https://github.com/hssm/browser-search-result-highlighter
-# Version 3.3.1
-
+# Version 3.4
 import json
 
 import aqt.browser.browser
