@@ -9,6 +9,7 @@ from aqt import gui_hooks
 from aqt.browser import SearchContext
 from aqt.editor import Editor, EditorMode
 from aqt.webview import WebContent
+from anki.config import Config
 import base64
 
 from .utils.parser import parse_search
@@ -58,6 +59,13 @@ class BrowserSearchResultHighlighter:
     def did_search(self, ctx: SearchContext):
         """Search has happened (regardless of source). Do highlight."""
         self.filter_terms = parse_search(ctx.search)
+        # If the global setting to ignore accents in browser search is turned on
+        # (i.e. nc: for every term) then we can match its behavior by moving all normal terms
+        # to noncomb. Luckily for us, enabling this setting only affects normal search terms
+        # (and not re: or front: etc) so solving this problem becomes easy for us.
+        if self.col.get_config_bool(Config.Bool.IGNORE_ACCENTS_IN_SEARCH):
+            self.filter_terms['noncomb'].extend(self.filter_terms['normal'])
+            self.filter_terms['normal'] = []
         #print("bsrh: Highlighting these terms: ", self.filter_terms)
 
 
