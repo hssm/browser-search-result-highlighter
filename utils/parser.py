@@ -143,7 +143,7 @@ def extract_searchable_terms(terms):
                     main = main[3:]
                     extracted.append({'tag': 'tag', 'regex': True, 'term': main})
                 else:
-                    extracted.append({'tag': 'tag', 'regex': False, 'term': main})
+                    extracted.append({'tag': 'tag', 'regex': False, 'term': '^'+main})
             else:
                 extracted.append({'tag': 'field', 'field_name': prefix.lower(), 'term': extract_searchable_terms([main])})
         else:
