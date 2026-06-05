@@ -181,7 +181,10 @@ def replace_special(term):
     return term
 
 def replace_special_tags(term, regex=False):
-    if not regex:
+    if regex:
+        term = term.replace('::', '∷')
+        term = term.replace(':', '∷')
+    else:
         term = term.replace('*', '.*')
         term = term.replace('_', '.')
     return term

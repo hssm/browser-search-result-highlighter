@@ -880,26 +880,25 @@ function highlightTags() {
     let buttons = document.querySelectorAll("button[data-addon-tag]");
     terms_parsed['tags'].forEach(tag => {
         let re = new RegExp(tag, "gi");
-        buttons.forEach(element => {
-            let tag_text = element.querySelector('span').childNodes[0];
-            data = tag_text.data.replaceAll('∷', '::')
-            let matches = [...data.matchAll(re)];
-
-            // Ensure we only count once, in case of regex matching multiple parts
-            if (matches.length) {
-                matched_tags++;
-                matched_total++;
+        buttons.forEach(button => {
+            // The full tag text may be truncated and the matched portion not visible.
+            // We will do our match on the full text
+            // TODO: truncated matches
+            let full_text = button.getAttribute('data-addon-tag');
+            let matches_full = [...full_text.matchAll(re)];
+            if (matches_full.length == 0) {
+                return;
             }
+            matched_tags++;
 
-            matches.forEach((match) => {
-                // Count the number of ::s we matched and offset by 1 for each because
-                // the real node uses the single character ∷
-                let offset = matchCount(match[0], /::/g);
+            let button_text = button.querySelector('span').childNodes[0];
+            matches_full.forEach((match) => {
+                matched_total++;
                 let r = new StaticRange({
-                    'startContainer': tag_text,
-                    'endContainer': tag_text,
+                    'startContainer': button_text,
+                    'endContainer': button_text,
                     'startOffset': match.index,
-                    'endOffset': match.index + match[0].length - offset
+                    'endOffset': match.index + match[0].length
                 });
                 CSS.highlights.get('tag').add(r);
             });
