@@ -881,26 +881,58 @@ function highlightTags() {
     terms_parsed['tags'].forEach(tag => {
         let re = new RegExp(tag, "gi");
         buttons.forEach(button => {
-            // The full tag text may be truncated and the matched portion not visible.
-            // We will do our match on the full text
-            // TODO: truncated matches
+            // The full tag text may be truncated and the matched portion fully or partially hidden.
+            // We will do our match on the full tag text first to get all the matches.
             let full_text = button.getAttribute('data-addon-tag');
             let matches_full = [...full_text.matchAll(re)];
             if (matches_full.length == 0) {
                 return;
             }
             matched_tags++;
+            let button_node = button.querySelector('span').childNodes[0];
+            let button_text = button_node.data;
+            let truncated = button_text[0] == '…';
 
-            let button_text = button.querySelector('span').childNodes[0];
             matches_full.forEach((match) => {
                 matched_total++;
-                let r = new StaticRange({
-                    'startContainer': button_text,
-                    'endContainer': button_text,
-                    'startOffset': match.index,
-                    'endOffset': match.index + match[0].length
-                });
-                CSS.highlights.get('tag').add(r);
+
+                // If any portion of the match falls outside of the visible range, make it known
+                // by applying a style to the button. Matches within the range are highlighted.
+                // We take advantage of the fact that truncation is always at the start.
+                let match_start = match.index;
+                let match_end = match.index + match[0].length;
+
+                let visible_start = 0;
+                let visible_end = full_text.length;
+                if (truncated) {
+                    visible_start = full_text.length - (button_text.length-1);
+                }
+
+                // Note: a match can be fully truncated, fully visible, or partially both.
+                // The logic below supports all three.
+
+                // Truncated
+                if (match_start < visible_start) {
+                    button.setAttribute('bsrh-moreincode', true);
+                    let r = new StaticRange({
+                        'startContainer': button_node,
+                        'endContainer': button_node,
+                        'startOffset': 0,
+                        'endOffset': 1
+                    });
+                    CSS.highlights.get('tag').add(r);
+                }
+
+                // Visible
+                if (match_end >= visible_start) {
+                    let r = new StaticRange({
+                        'startContainer': button_node,
+                        'endContainer': button_node,
+                        'startOffset': Math.max(0, match_start - (full_text.length - button_text.length)),
+                        'endOffset': match_end - (full_text.length - button_text.length)
+                    });
+                    CSS.highlights.get('tag').add(r);
+                }
             });
         });
     });

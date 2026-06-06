@@ -153,6 +153,16 @@
   background: var(--bsrh-dark-background);
   color: var(--bsrh-dark-foreground);
 }
+/* Truncated tag  */
+.tag[bsrh-moreincode=true] {
+  outline: 1px dashed var(--bsrh-light-background);
+  outline-offset: -1px;
+}
+.night_mode .tag[bsrh-moreincode=true] {
+  outline: 1px dashed var(--bsrh-dark-background);
+  outline-offset: -1px;
+}
+
 
 /* Minimap */
 .note-editor[minimap=false] #match-minimap {
