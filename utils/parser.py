@@ -89,7 +89,7 @@ def parse_nodes(search):
     return out
 
 
-# Pick out only the terms that result in a search of field string content.
+# Pick out only the terms that result in a search of field or tag content.
 # If the term is a (grouping) term, recursively extract terms from that too
 def extract_searchable_terms(terms):
     extracted = []
@@ -141,9 +141,12 @@ def extract_searchable_terms(terms):
             elif prefix == 'tag':
                 if main.lower().startswith('re:'):
                     main = main[3:]
-                    extracted.append({'tag': 'tag', 'regex': True, 'term': main})
+                    extracted.append({'tag': 'tag', 'regex': True, 'noncomb': False, 'term': main})
+                elif main.lower().startswith('nc:'):
+                    main = main[3:]
+                    extracted.append({'tag': 'tag', 'regex': False, 'noncomb': True, 'term': '^'+main})
                 else:
-                    extracted.append({'tag': 'tag', 'regex': False, 'term': '^'+main})
+                    extracted.append({'tag': 'tag', 'regex': False, 'noncomb': False, 'term': '^'+main})
             else:
                 extracted.append({'tag': 'field', 'field_name': prefix.lower(), 'term': extract_searchable_terms([main])})
         else:
@@ -196,7 +199,10 @@ def build_payload_from_terms(terms):
         'regex': [],
         'noncomb': [],
         'fields': [],
-        'tags': []
+        'tags': {
+            'normal': [],
+            'noncomb': []
+        }
     }
 
     specials = True
@@ -222,8 +228,13 @@ def build_payload_from_terms(terms):
         if node['tag'] == 'noncombining':
             out['noncomb'].append(node['term'])
         if node['tag'] == 'tag':
+            # TODO: why are we adding regex to normal? is this a bug?
             node['term'] = replace_special_tags(node['term'], node['regex'])
-            out['tags'].append(node['term'])
+            if node['noncomb']:
+                out['tags']['noncomb'].append(node['term'])
+            else:
+                out['tags']['normal'].append(node['term'])
+
     return out
 
 ignore = ['deck', 'note', 'card', 'flag', 'resched', 'prop', 'added', 'edited', 'introduced',
@@ -232,7 +243,6 @@ ignore = ['deck', 'note', 'card', 'flag', 'resched', 'prop', 'added', 'edited', 
 if __name__ == "__main__":
     from pprint import pprint
 
-    search = 'tag:animal::cat::lion tag:re:^parent$ tag:re:.*ani tag:anim*'
     search = ('re:(?-i)aBCdeF nc:chuán RandomText1 d.g c*t &lt;art&gt; '
               'fRoNt:re:reFRONT front:fff BACK:BACK back:nc:impossible '
               're:MoO RandomText2 tag:t1 tag:TAG2 (cat or (dog and mouse)) '
@@ -247,6 +257,7 @@ if __name__ == "__main__":
     search = "cat dog cat (cat or dog) nc:cat nc:dog tag:cat tag:cat front:cat front:dog front:cat"
     search = '"quoted term" "nc:with quotes" "front:a dog"'
     search = "tag:_ag tag:*og"
+    search = 'tag:animal::cat::lion tag:re:^parent$ tag:re:.*ani tag:anim* tag:nc:*بعد tag:nc:conjuncao tag:nc:بعد*'
 
 
     print("Nodes:")

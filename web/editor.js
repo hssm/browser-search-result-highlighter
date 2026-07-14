@@ -416,6 +416,12 @@ function parseTerms() {
             let regex_build = [];
             for (let i = 0; i < search.length; i++) {
                 regex_build.push(search[i]);
+                // We can still search for wildcards in nc:
+                // Don't break them up since they come as .* or .+
+                // TODO: this needs further testing. Seems easily breakable
+                if (search[i] == '.') {
+                    continue;
+                }
                 regex_build.push('\\p{M}*');
             }
             const built = replace_more(regex_build.join(''));
@@ -443,7 +449,10 @@ function parseTerms() {
         'regex': compileRegexes(payload['regex']),
         'noncomb': compileNoncombs(payload['noncomb']),
         'fields': compileFields(payload['fields']),
-        'tags': payload['tags']
+        'tags': {
+            'normal': compileNormals(payload['tags']['normal']),
+            'noncomb': compileNoncombs(payload['tags']['noncomb'])
+        }
     };
 }
 
@@ -878,22 +887,46 @@ function unhighlightCodeExpander(container) {
 
 function highlightTags() {
     let buttons = document.querySelectorAll("button[data-addon-tag]");
-    terms_parsed['tags'].forEach(tag => {
-        let re = new RegExp(tag, "gi");
+
+    function highlightTagsInner(re, normalize=false) {
         buttons.forEach(button => {
             // The full tag text may be truncated and the matched portion fully or partially hidden.
             // We will do our match on the full tag text first to get all the matches.
             let full_text = button.getAttribute('data-addon-tag');
-            let matches_full = [...full_text.matchAll(re)];
-            if (matches_full.length == 0) {
-                return;
+            let full_text2 = null;
+            if (normalize) {
+                full_text = full_text.normalize("NFKD").replace(/\p{M}/gu, '');
+                full_text2 = button.getAttribute('data-addon-tag');
             }
+
+            let matches_full = [...full_text.matchAll(re)];
+            let matches_full2 = null;
+            if (normalize) {
+                matches_full2 = [...full_text2.matchAll(re)]
+                if (matches_full.length == 0 && matches_full2.length == 0) {
+                    return;
+                }
+            } else {
+                if (matches_full.length == 0) {
+                    return;
+                }
+            }
+
             matched_tags++;
             let button_node = button.querySelector('span').childNodes[0];
             let button_text = button_node.data;
+            let button_text2 = null;
             let truncated = button_text[0] == '…';
 
-            matches_full.forEach((match) => {
+            for (let i = 0; i < matches_full.length; i++) {
+                let match = matches_full[i]
+                if (normalize) {
+                    let match2 = matches_full2[i];
+                    if (match2 && (match[0].length != match2[0].length || match.index != match2.index)) {
+                        match = match2;
+                        full_text = full_text2;
+                    }
+                }
                 matched_total++;
 
                 // If any portion of the match falls outside of the visible range, make it known
@@ -933,8 +966,15 @@ function highlightTags() {
                     });
                     CSS.highlights.get('tag').add(r);
                 }
-            });
+            }
         });
+    }
+
+    terms_parsed['tags']['normal'].forEach(re => {
+        highlightTagsInner(re);
+    });
+    terms_parsed['tags']['noncomb'].forEach(re => {
+        highlightTagsInner(re, true);
     });
 }
 
